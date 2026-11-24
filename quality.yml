@@ -1,0 +1,8 @@
+# Quality configuration for this service. Owned by the QA Guild (see CODEOWNERS).
+# The CI workflow reads this file to decide which gates run and how strict they are.
+tier: 1
+standard_version: 1.0.0
+gates:
+  mutation_score_min: 80   # on changed code; Tier 1 standard
+  risk_check: true         # every risk in risks.yml has a test naming it
+waivers: []                # e.g. { gate: mutation, reason: "...", approved_by: "...", expires: 2026-12-31 }

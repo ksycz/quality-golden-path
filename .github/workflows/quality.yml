@@ -1,0 +1,92 @@
+name: quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Read-only by default; no job needs to write.
+permissions:
+  contents: read
+
+# Agents push often: a new push cancels the old run.
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Which gates apply
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.classify.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - id: classify
+        run: node scripts/changes.mjs
+        env:
+          BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD~1' }}
+
+  cheap:
+    name: Cheap checks (every change)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - name: PR title follows Conventional Commits
+        if: github.event_name == 'pull_request'
+        run: node scripts/pr-title.mjs
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }} # passed as env, never interpolated into the script
+      - name: Name guard
+        run: node scripts/name-guard.mjs
+      - name: Secrets scan
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  fast:
+    name: Stage 1 · Fast
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run check:risks
+      - run: npm run check:data
+
+  evidence:
+    name: Stage 2 · Evidence (mutation)
+    needs: [changes, fast]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Mutation testing on changed code (Tier 1 ≥ 80%)
+        run: npm run mutation:changed
+        env:
+          BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD~1' }}
+
+  gate:
+    name: gate
+    # The single required check. Skipped jobs count as passed; failed or cancelled ones don't.
+    needs: [changes, cheap, fast, evidence]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: All applicable gates passed
+        run: |
+          echo "changes=${{ needs.changes.result }} cheap=${{ needs.cheap.result }} fast=${{ needs.fast.result }} evidence=${{ needs.evidence.result }}"
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then exit 1; fi
