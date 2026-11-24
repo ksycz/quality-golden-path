@@ -1,0 +1,11 @@
+node_modules/
+coverage/
+reports/
+test-results/
+playwright-report/
+.stryker-tmp/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
