@@ -1,0 +1,17 @@
+# Risk list for this service. Tests reference these IDs in their names.
+# A risk counts towards Risk Coverage only if its tests kill the mutants in the code they cover.
+service: transfer-limit
+tier: 1
+risks:
+  - id: RISK-TL-BOUNDARY
+    description: A transfer exactly at the limit is wrongly rejected, or one cent over is wrongly approved.
+    requirement: REQ-TL-1
+  - id: RISK-TL-PARTIAL
+    description: A transfer over the limit is partly sent, or the remaining limit changes after a rejection.
+    requirement: REQ-TL-2
+  - id: RISK-TL-INVALID
+    description: A zero, negative or fractional amount is accepted.
+    requirement: REQ-TL-3
+  - id: RISK-TL-REMAINING
+    description: The customer is shown a wrong or negative remaining limit.
+    requirement: REQ-TL-4

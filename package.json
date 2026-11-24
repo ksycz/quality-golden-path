@@ -1,0 +1,21 @@
+{
+  "name": "quality-golden-path",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Demo of a quality golden path when coding agents write the code. Synthetic domain.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "fast-check": "4.3.0",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  }
+}
