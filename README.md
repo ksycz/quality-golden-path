@@ -4,7 +4,7 @@ A small, public demo of a **quality golden path for teams where coding agents wr
 
 > Prove it before release. Confirm it in production.
 
-The domain is synthetic: a bank's **daily transfer limit**. Nothing here comes from any real company, and all data is made up.
+The domain is synthetic: a payment service's **daily transfer limit**. Nothing here comes from any real company, and all data is made up.
 
 ## What's here
 
