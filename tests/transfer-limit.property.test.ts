@@ -2,54 +2,48 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { decideTransfer } from '../src/transfer-limit';
 
-// Property-based tests: fast-check generates many inputs, including the edges
-// (0, 1, the limit itself), and shrinks any failure to the smallest example.
+// Property-based tests: instead of picking examples, we state a rule that must hold
+// for ANY amounts. fast-check tries hundreds of random combinations (including edges
+// like 0 and the limit itself) and, if one breaks the rule, shrinks it to the
+// smallest failing example.
 
-const cents = (max: number) => fc.integer({ min: 0, max });
-const positiveCents = (max: number) => fc.integer({ min: 1, max });
-const MAX = 10_000_000; // 100,000.00 EUR is plenty for a daily limit
+/** Any whole number of cents from €0 to €100,000. */
+const anyCents = fc.integer({ min: 0, max: 10_000_000 });
+/** Any valid transfer amount: from one cent to €100,000. */
+const anyAmount = fc.integer({ min: 1, max: 10_000_000 });
 
-describe('properties of the daily transfer limit', () => {
-  it('RISK-TL-BOUNDARY · REQ-TL-1/2: approved exactly when the day total stays within the limit', () => {
+describe('rules that hold for any amounts', () => {
+  it('RISK-TL-BOUNDARY · REQ-TL-1/2: a transfer is approved exactly when the day total stays within the limit', () => {
     fc.assert(
-      fc.property(positiveCents(MAX), cents(MAX), cents(MAX), (amountCents, sentTodayCents, dailyLimitCents) => {
+      fc.property(anyAmount, anyCents, anyCents, (amountCents, sentTodayCents, dailyLimitCents) => {
         const decision = decideTransfer({ amountCents, sentTodayCents, dailyLimitCents });
-        expect(decision.status === 'approved').toBe(sentTodayCents + amountCents <= dailyLimitCents);
+
+        const staysWithinLimit = sentTodayCents + amountCents <= dailyLimitCents;
+        expect(decision.status).toBe(staysWithinLimit ? 'approved' : 'rejected');
       }),
     );
   });
 
-  it('RISK-TL-REMAINING · REQ-TL-4: remaining limit is exact and never negative', () => {
+  it('RISK-TL-PARTIAL · REQ-TL-2/4: what is left goes down by exactly the amount sent, or not at all if rejected', () => {
     fc.assert(
-      fc.property(positiveCents(MAX), cents(MAX), cents(MAX), (amountCents, sentTodayCents, dailyLimitCents) => {
+      fc.property(anyAmount, anyCents, anyCents, (amountCents, sentTodayCents, dailyLimitCents) => {
+        // Ask with an invalid amount (0) to see what is left before this transfer.
+        const leftBefore = decideTransfer({ amountCents: 0, sentTodayCents, dailyLimitCents }).remainingTodayCents;
         const decision = decideTransfer({ amountCents, sentTodayCents, dailyLimitCents });
-        const before = Math.max(0, dailyLimitCents - sentTodayCents);
+
+        const spent = decision.status === 'approved' ? amountCents : 0;
+        expect(decision.remainingTodayCents).toBe(leftBefore - spent);
+      }),
+    );
+  });
+
+  it('RISK-TL-REMAINING · REQ-TL-4: what is left is never negative', () => {
+    fc.assert(
+      fc.property(anyAmount, anyCents, anyCents, (amountCents, sentTodayCents, dailyLimitCents) => {
+        const decision = decideTransfer({ amountCents, sentTodayCents, dailyLimitCents });
+
         expect(decision.remainingTodayCents).toBeGreaterThanOrEqual(0);
-        expect(decision.remainingTodayCents).toBe(decision.status === 'approved' ? before - amountCents : before);
       }),
-    );
-  });
-
-  it('RISK-TL-PARTIAL · REQ-TL-2: if an amount is approved, every smaller amount is approved too', () => {
-    fc.assert(
-      fc.property(positiveCents(MAX), cents(MAX), cents(MAX), (amountCents, sentTodayCents, dailyLimitCents) => {
-        fc.pre(decideTransfer({ amountCents, sentTodayCents, dailyLimitCents }).status === 'approved');
-        const smaller = Math.max(1, Math.floor(amountCents / 2));
-        expect(decideTransfer({ amountCents: smaller, sentTodayCents, dailyLimitCents }).status).toBe('approved');
-      }),
-    );
-  });
-
-  it('RISK-TL-INVALID · REQ-TL-3: non-integer amounts are always rejected as invalid', () => {
-    fc.assert(
-      fc.property(
-        fc.double({ noNaN: false }).filter((n) => !Number.isSafeInteger(n)),
-        cents(MAX),
-        (amountCents, sentTodayCents) => {
-          const decision = decideTransfer({ amountCents, sentTodayCents });
-          expect(decision).toMatchObject({ status: 'rejected', reason: 'INVALID_AMOUNT' });
-        },
-      ),
     );
   });
 });

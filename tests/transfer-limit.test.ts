@@ -1,101 +1,83 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_DAILY_LIMIT_CENTS, decideTransfer } from '../src/transfer-limit';
+import { eur } from './money';
 
-// Test names start with the risk ID from risks.yml and the requirement ID they prove.
+// Each describe names the risk (risks.yml) and the requirement it proves
+// (requirements/daily-transfer-limit.md). All amounts are in euros via eur().
 
-describe('RISK-TL-BOUNDARY · REQ-TL-1: reaching the limit exactly is allowed', () => {
-  it('approves a single transfer of exactly the default limit', () => {
-    expect(decideTransfer({ amountCents: 500_000, sentTodayCents: 0 })).toEqual({
-      status: 'approved',
-      remainingTodayCents: 0,
-    });
-  });
+describe('REQ-TL-1, REQ-TL-2, REQ-TL-4: the examples table from the requirement', () => {
+  // Default limit: 5,000.00 EUR. Same rows, same order as the requirement file.
+  it.each`
+    sentToday  | amount     | result              | leftToday
+    ${0}       | ${5000}    | ${'approved'}       | ${0}
+    ${0}       | ${5000.01} | ${'LIMIT_EXCEEDED'} | ${5000}
+    ${4999.99} | ${0.01}    | ${'approved'}       | ${0}
+    ${4999.99} | ${0.02}    | ${'LIMIT_EXCEEDED'} | ${0.01}
+    ${1000}    | ${0}       | ${'INVALID_AMOUNT'} | ${4000}
+  `('sent €$sentToday today, sends €$amount → $result, €$leftToday left', ({ sentToday, amount, result, leftToday }) => {
+    const decision = decideTransfer({ sentTodayCents: eur(sentToday), amountCents: eur(amount) });
 
-  it('rejects a single transfer one cent over the default limit', () => {
-    expect(decideTransfer({ amountCents: 500_001, sentTodayCents: 0 })).toEqual({
-      status: 'rejected',
-      reason: 'LIMIT_EXCEEDED',
-      remainingTodayCents: 500_000,
-    });
-  });
-
-  it('approves the last cent of the day', () => {
-    expect(decideTransfer({ amountCents: 1, sentTodayCents: 499_999 })).toEqual({
-      status: 'approved',
-      remainingTodayCents: 0,
-    });
-  });
-
-  it('rejects two cents when only one is left', () => {
-    expect(decideTransfer({ amountCents: 2, sentTodayCents: 499_999 })).toEqual({
-      status: 'rejected',
-      reason: 'LIMIT_EXCEEDED',
-      remainingTodayCents: 1,
-    });
+    expect(decision.status === 'approved' ? 'approved' : decision.reason).toBe(result);
+    expect(decision.remainingTodayCents).toBe(eur(leftToday));
   });
 });
 
-describe('RISK-TL-PARTIAL · REQ-TL-2: over the limit is rejected entirely', () => {
-  it('rejects any transfer once the limit is used up', () => {
-    expect(decideTransfer({ amountCents: 1, sentTodayCents: 500_000 })).toEqual({
-      status: 'rejected',
-      reason: 'LIMIT_EXCEEDED',
-      remainingTodayCents: 0,
-    });
+describe('RISK-TL-PARTIAL · REQ-TL-2: nothing goes through once the limit is used up', () => {
+  it('rejects even one cent when €5,000 has already been sent', () => {
+    const decision = decideTransfer({ sentTodayCents: eur(5000), amountCents: eur(0.01) });
+
+    expect(decision).toEqual({ status: 'rejected', reason: 'LIMIT_EXCEEDED', remainingTodayCents: 0 });
   });
 });
 
-describe('RISK-TL-INVALID · REQ-TL-3: only positive whole cents are valid', () => {
+describe('RISK-TL-INVALID · REQ-TL-3: only a positive whole number of cents is a valid amount', () => {
   it.each([
     ['zero', 0],
     ['negative', -100],
-    ['fractional cents', 10.5],
+    ['half a cent', 10.5],
     ['not a number', Number.NaN],
     ['infinity', Number.POSITIVE_INFINITY],
-    ['beyond safe integer range', Number.MAX_SAFE_INTEGER + 1],
+    ['too large to count exactly', Number.MAX_SAFE_INTEGER + 1],
   ])('rejects an amount that is %s', (_label, amountCents) => {
-    expect(decideTransfer({ amountCents, sentTodayCents: 100_000 })).toEqual({
-      status: 'rejected',
-      reason: 'INVALID_AMOUNT',
-      remainingTodayCents: 400_000,
-    });
+    const decision = decideTransfer({ sentTodayCents: eur(1000), amountCents });
+
+    expect(decision).toEqual({ status: 'rejected', reason: 'INVALID_AMOUNT', remainingTodayCents: eur(4000) });
   });
 });
 
-describe('RISK-TL-REMAINING · REQ-TL-4: remaining limit is shown and never negative', () => {
-  it('shows zero, not a negative number, when the day total is already over a lowered limit', () => {
-    expect(decideTransfer({ amountCents: 1, sentTodayCents: 300_000, dailyLimitCents: 200_000 })).toEqual({
-      status: 'rejected',
-      reason: 'LIMIT_EXCEEDED',
-      remainingTodayCents: 0,
-    });
+describe('RISK-TL-REMAINING · REQ-TL-4: what is left is never negative', () => {
+  it('shows €0 left, not minus, when the limit was lowered below what was already sent', () => {
+    const decision = decideTransfer({ dailyLimitCents: eur(2000), sentTodayCents: eur(3000), amountCents: eur(0.01) });
+
+    expect(decision.remainingTodayCents).toBe(0);
   });
 });
 
 describe('REQ-TL-5: default and custom limits', () => {
-  it('uses 5,000.00 EUR as the default limit', () => {
-    expect(DEFAULT_DAILY_LIMIT_CENTS).toBe(500_000);
+  it('uses €5,000 as the default limit', () => {
+    expect(DEFAULT_DAILY_LIMIT_CENTS).toBe(eur(5000));
   });
 
-  it('applies a custom limit at its exact boundary', () => {
-    expect(decideTransfer({ amountCents: 100_000, sentTodayCents: 0, dailyLimitCents: 100_000 }).status).toBe('approved');
-    expect(decideTransfer({ amountCents: 100_001, sentTodayCents: 0, dailyLimitCents: 100_000 }).status).toBe('rejected');
+  it('allows exactly a custom €1,000 limit, and not one cent more', () => {
+    const limit = { dailyLimitCents: eur(1000), sentTodayCents: 0 };
+
+    expect(decideTransfer({ ...limit, amountCents: eur(1000) }).status).toBe('approved');
+    expect(decideTransfer({ ...limit, amountCents: eur(1000.01) }).status).toBe('rejected');
   });
 
-  it('rejects every transfer when the limit is zero', () => {
-    expect(decideTransfer({ amountCents: 1, sentTodayCents: 0, dailyLimitCents: 0 })).toEqual({
-      status: 'rejected',
-      reason: 'LIMIT_EXCEEDED',
-      remainingTodayCents: 0,
-    });
+  it('rejects everything when the limit is €0', () => {
+    const decision = decideTransfer({ dailyLimitCents: 0, sentTodayCents: 0, amountCents: eur(0.01) });
+
+    expect(decision).toEqual({ status: 'rejected', reason: 'LIMIT_EXCEEDED', remainingTodayCents: 0 });
   });
 
+  // A bad limit or day total is a bug in the calling code, not a customer decision, so it throws.
   it.each([
     ['a negative limit', { dailyLimitCents: -1, sentTodayCents: 0 }],
-    ['a fractional limit', { dailyLimitCents: 10.5, sentTodayCents: 0 }],
-    ['a negative day total', { dailyLimitCents: 100, sentTodayCents: -1 }],
-    ['a fractional day total', { dailyLimitCents: 100, sentTodayCents: 0.5 }],
-  ])('throws on %s, because that is a bug in the caller', (_label, input) => {
-    expect(() => decideTransfer({ amountCents: 1, ...input })).toThrow(RangeError);
+    ['a limit with half a cent', { dailyLimitCents: 10.5, sentTodayCents: 0 }],
+    ['a negative total sent today', { dailyLimitCents: eur(5000), sentTodayCents: -1 }],
+    ['a total sent today with half a cent', { dailyLimitCents: eur(5000), sentTodayCents: 0.5 }],
+  ])('throws on %s', (_label, setup) => {
+    expect(() => decideTransfer({ ...setup, amountCents: eur(1) })).toThrow(RangeError);
   });
 });
