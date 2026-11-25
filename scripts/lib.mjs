@@ -55,3 +55,12 @@ export const SKIP_CODE = 78;
 
 // Exit code a check uses for a warning: shown as WARN in the report, and it doesn't fail the run.
 export const WARN_CODE = 79;
+
+// Changed files including work not committed yet: edits since this branch left the base, plus new
+// files git doesn't track yet. Locally that is what you are about to push; in CI it equals changedFiles().
+export function changedFilesWithLocal(base = process.env.BASE_REF ?? 'origin/main') {
+  const mergeBase = git('merge-base', base, 'HEAD');
+  const edited = git('diff', '--name-only', '--diff-filter=d', mergeBase).split('\n');
+  const added = git('ls-files', '--others', '--exclude-standard').split('\n');
+  return [...new Set([...edited, ...added])].filter(Boolean);
+}

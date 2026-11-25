@@ -7,9 +7,10 @@
 // Only changed source files are mutated, to keep the PR fast; the full run is `npm run mutation`.
 
 import { execFileSync } from 'node:child_process';
-import { changedFiles } from './lib.mjs';
+import { changedFilesWithLocal } from './lib.mjs';
 
-const changed = changedFiles().filter((file) => /^src\/.*\.ts$/.test(file));
+// Includes uncommitted and new files, so running it before a commit checks what you are about to push.
+const changed = changedFilesWithLocal().filter((file) => /^src\/.*\.ts$/.test(file));
 if (changed.length === 0) {
   console.log('✓ No source files changed: mutation gate not needed');
   process.exit(0);
