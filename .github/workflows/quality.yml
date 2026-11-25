@@ -2,7 +2,7 @@
 # Order: work out which gates apply → cheap checks → Stage 1 (fast) → Stage 2 (mutation) and Stage 3 (smoke) side by side
 # → one final "gate" result.
 # Only "gate" is a required check on main, so one name covers every job that applies to the change.
-name: quality
+name: Quality gates
 # The title at the top of each run page: which PR, or which push to main.
 run-name: >-
   ${{ github.event_name == 'pull_request'
