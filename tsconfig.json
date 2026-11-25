@@ -1,4 +1,4 @@
-// TypeScript settings. Used only for type checking (npm run typecheck); Vitest runs the code.
+// TypeScript settings. Used only for type checking (npm run typecheck); Vitest and Node run the code.
 {
   "compilerOptions": {
     "target": "ES2022",                 // modern JavaScript, matches Node 22
@@ -9,7 +9,9 @@
     "exactOptionalPropertyTypes": true, // optional means "may be missing", not "may be undefined"
     "skipLibCheck": true,               // don't type-check node_modules
     "noEmit": true,                     // check only, never write .js files
-    "types": []                         // no global types unless imported
+    "types": ["node"],                  // Node's types, for the server; nothing else global
+    "allowImportingTsExtensions": true, // imports end in .ts, so Node can run the server without a build
+    "erasableSyntaxOnly": true          // only TypeScript that Node can strip: no enums or namespaces
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "smoke", "playwright.config.ts"]
 }

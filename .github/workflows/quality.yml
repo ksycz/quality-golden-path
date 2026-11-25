@@ -1,7 +1,13 @@
 # Quality gates for every pull request and every push to main.
-# Order: work out which gates apply → cheap checks → Stage 1 (fast) → Stage 2 (mutation) → one final "gate" result.
+# Order: work out which gates apply → cheap checks → Stage 1 (fast) → Stage 2 (mutation) and Stage 3 (smoke) side by side
+# → one final "gate" result.
 # Only "gate" is a required check on main, so one name covers every job that applies to the change.
-name: quality
+name: Quality gates
+# The title at the top of each run page: which PR, or which push to main.
+run-name: >-
+  ${{ github.event_name == 'pull_request'
+      && format('Quality gates · PR #{0} · {1}', github.event.pull_request.number, github.event.pull_request.title)
+      || 'Quality gates · main after a merge' }}
 
 on:
   pull_request:
@@ -15,6 +21,11 @@ on:
 permissions:
   contents: read
 
+# Every "run:" step uses bash with pipefail, so "npm test | tee log" still fails when the tests fail.
+defaults:
+  run:
+    shell: bash
+
 # Agents push often: a new push cancels the old run.
 concurrency:
   group: quality-${{ github.ref }}
@@ -23,7 +34,7 @@ concurrency:
 jobs:
   # Decide from the changed files whether this is a code change or docs-only (scripts/changes.mjs).
   changes:
-    name: Which gates apply
+    name: "Which gates apply · code or docs-only, from the changed files"
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.classify.outputs.code }}
@@ -32,6 +43,7 @@ jobs:
         # Full history so the script can diff against the base branch; no git credentials left on disk.
         with: { fetch-depth: 0, persist-credentials: false }
       - id: classify
+        name: Classify the changed files
         run: node scripts/changes.mjs
         env:
           # On a PR, compare with the target branch. On a push to main, compare with the previous commit.
@@ -39,7 +51,7 @@ jobs:
 
   # Checks that cost seconds, so they run on every change, docs included.
   cheap:
-    name: Cheap checks (every change)
+    name: "Cheap checks · PR title, names, size, secrets"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -68,7 +80,10 @@ jobs:
 
   # Stage 1: everything that runs in under a minute. Skipped for docs-only changes.
   fast:
-    name: Stage 1 · Fast
+    name: "Stage 1 · Fast · lint, types, tests, risks, payment data"
+    outputs:
+      tests: ${{ steps.summary.outputs.tests }}
+      risks: ${{ steps.summary.outputs.risks }}
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
@@ -78,16 +93,31 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version-file: .nvmrc, cache: npm }
       # Install exactly what package-lock.json says, without running packages' install scripts.
-      - run: npm ci --ignore-scripts
-      - run: npm run lint          # likely bugs and unused code
-      - run: npm run typecheck     # TypeScript types
-      - run: npm test              # example and property-based tests
-      - run: npm run check:risks   # every risk in risks.yml has a test naming it
-      - run: npm run check:data    # no real-looking card numbers or IBANs
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts
+      - name: Lint · likely bugs and unused code
+        run: npm run lint
+      - name: Types · TypeScript
+        run: npm run typecheck
+      - name: Tests · example and property-based
+        run: npm test 2>&1 | tee "$RUNNER_TEMP/tests.log"
+      - name: Risks have tests · every risk in risks.yml has a test naming it
+        run: npm run check:risks 2>&1 | tee "$RUNNER_TEMP/risks.log"
+      - name: No real payment data · card numbers and IBANs
+        run: npm run check:data
+      # Result lines for the run's Summary page, even when a step above failed.
+      - id: summary
+        name: Write results to the Summary page
+        if: always()
+        run: |
+          node scripts/ci-summary.mjs tests "$RUNNER_TEMP/tests.log"
+          node scripts/ci-summary.mjs risks "$RUNNER_TEMP/risks.log"
 
   # Stage 2: do the tests actually catch bugs? Only runs after Stage 1 passes.
   evidence:
-    name: Stage 2 · Evidence (mutation)
+    name: "Stage 2 · Evidence · mutation score ≥ 80% on changed code"
+    outputs:
+      mutation: ${{ steps.summary.outputs.mutation }}
     needs: [changes, fast]
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
@@ -96,32 +126,69 @@ jobs:
         with: { fetch-depth: 0, persist-credentials: false }
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version-file: .nvmrc, cache: npm }
-      - run: npm ci --ignore-scripts
-      - name: Mutation testing on changed code (Tier 1 ≥ 80%)
-        run: npm run mutation:changed
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts
+      - name: Mutation testing on changed code · Tier 1 needs 80%
+        run: npm run mutation:changed 2>&1 | tee "$RUNNER_TEMP/mutation.log"
         env:
           BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD~1' }}
+      # The score, and every surviving mutant, on the run's Summary page.
+      - id: summary
+        name: Write results to the Summary page
+        if: always()
+        run: node scripts/ci-summary.mjs mutation "$RUNNER_TEMP/mutation.log"
+
+  # Stage 3: start the real service and call it. Runs beside Stage 2, since neither needs the other.
+  smoke:
+    name: "Stage 3 · Smoke · the real service starts and answers"
+    outputs:
+      smoke: ${{ steps.summary.outputs.smoke }}
+    needs: [changes, fast]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc, cache: npm }
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts
+      # API calls only, so no browser download. Playwright starts and stops the server.
+      - name: Smoke tests · Playwright against the running API
+        run: npm run smoke 2>&1 | tee "$RUNNER_TEMP/smoke.log"
+      - id: summary
+        name: Write results to the Summary page
+        if: always()
+        run: node scripts/ci-summary.mjs smoke "$RUNNER_TEMP/smoke.log"
 
   gate:
-    name: gate
-    # The single required check. Skipped jobs count as passed; failed or cancelled ones don't.
-    needs: [changes, cheap, fast, evidence]
+    # The single required check. GitHub requires it by this exact name (ruleset on main and
+    # .github/rulesets/main.json), so renaming it means changing the ruleset in the same step.
+    # Skipped jobs count as passed; failed or cancelled ones don't.
+    name: "gate · can this PR merge?"
+    needs: [changes, cheap, fast, evidence, smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: All applicable gates passed
-        # Job results come in through env, never pasted into the script.
+        # Job results and result lines come in through env, never pasted into the script.
         env:
+          CODE: ${{ needs.changes.outputs.code }}
           CHANGES: ${{ needs.changes.result }}
           CHEAP: ${{ needs.cheap.result }}
           FAST: ${{ needs.fast.result }}
           EVIDENCE: ${{ needs.evidence.result }}
+          SMOKE: ${{ needs.smoke.result }}
+          TESTS: ${{ needs.fast.outputs.tests }}
+          RISKS: ${{ needs.fast.outputs.risks }}
+          MUTATION: ${{ needs.evidence.outputs.mutation }}
+          SMOKE_TESTS: ${{ needs.smoke.outputs.smoke }}
         run: |
-          # Turn a job result into a badge for the run page.
+          # Turn a job result into a badge for the run page, and say why a stage didn't run.
           badge() {
             case "$1" in
               success) echo "🟢 PASS" ;;
-              skipped) echo "⚪ SKIP (not needed for these files, or an earlier stage failed)" ;;
+              skipped) [ "$CODE" = "false" ] && echo "⚪ SKIP · docs-only change" || echo "⚪ SKIP · an earlier stage failed" ;;
               *)       echo "🔴 FAIL ($1)" ;;
             esac
           }
@@ -129,15 +196,18 @@ jobs:
           {
             echo "## Quality gates"
             echo ""
-            echo "| Stage | What it checks | Result |"
-            echo "|---|---|---|"
-            echo "| Changes | Which files changed, so docs-only PRs skip the heavy gates | $(badge "$CHANGES") |"
-            echo "| Cheap | PR title, name guard, PR size, secret scan | $(badge "$CHEAP") |"
-            echo "| Fast | Lint, types, tests, risks have tests, no real payment data | $(badge "$FAST") |"
-            echo "| Evidence | Mutation score on changed code | $(badge "$EVIDENCE") |"
+            echo "| Stage | What it checks | Result | Detail |"
+            echo "|---|---|---|---|"
+            echo "| Which gates apply | Code or docs-only, from the changed files (never the PR title) | $(badge "$CHANGES") | $([ "$CODE" = "true" ] && echo "code change: every gate runs" || echo "docs only: heavy gates skipped") |"
+            echo "| Cheap checks | PR title, name guard, PR size, secret scan | $(badge "$CHEAP") | |"
+            echo "| Stage 1 · Fast | Lint, types, tests, every risk has a test, no real payment data | $(badge "$FAST") | ${TESTS:+tests $TESTS}${RISKS:+ · $RISKS} |"
+            echo "| Stage 2 · Evidence | Mutation score on changed code, 80% needed | $(badge "$EVIDENCE") | $MUTATION |"
+            echo "| Stage 3 · Smoke | The real service starts and answers | $(badge "$SMOKE") | ${SMOKE_TESTS} |"
+            echo ""
+            echo "Each stage's own section below has the detail: surviving mutants, and each smoke test."
           } >> "$GITHUB_STEP_SUMMARY"
           # Fail the required check if any job failed or was cancelled; skipped is fine.
-          for result in "$CHANGES" "$CHEAP" "$FAST" "$EVIDENCE"; do
+          for result in "$CHANGES" "$CHEAP" "$FAST" "$EVIDENCE" "$SMOKE"; do
             if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
               echo "::error::A quality gate failed. See the Summary table."
               exit 1

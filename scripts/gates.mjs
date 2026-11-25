@@ -1,12 +1,12 @@
 // Runs every quality gate locally and prints one test-report summary.
 // Run: npm run gates
 //
-// Same gates and order as CI: Stage 1 (fast checks), then Stage 2 (mutation testing),
-// which only runs if Stage 1 passed. Each gate's own output is hidden unless it fails,
+// Same gates as CI: Stage 1 (fast checks), then Stage 2 (mutation testing) and Stage 3 (smoke tests),
+// each only if the stages before it passed. Each gate's own output is hidden unless it fails,
 // so a green run is one short table and a red run shows exactly what broke.
 
 import { spawnSync } from 'node:child_process';
-import { c, SKIP_CODE, WARN_CODE } from './lib.mjs';
+import { c, RESULT, SKIP_CODE, WARN_CODE } from './lib.mjs';
 
 // Each gate: the npm script to run, a readable name, and how to pull one key number from its output.
 const STAGES = [
@@ -18,15 +18,15 @@ const STAGES = [
       {
         script: 'test',
         label: 'Tests',
-        detail: (out) => out.match(/Tests\s+(\d+ (?:failed|passed)[^\n(]*)/)?.[1]?.trim(),
+        detail: RESULT.tests,
         // On failure, show only the failing test names and what they expected, not the whole log.
         focus: /^\s*FAIL\s|AssertionError|^Expected|^Received/,
       },
-      { script: 'check:risks', label: 'Risks have tests', detail: (out) => out.match(/All (\d+) risks/)?.[1]?.concat(' risks covered') },
+      { script: 'check:risks', label: 'Risks have tests', detail: RESULT.risks },
       { script: 'check:names', label: 'Name guard' },
       { script: 'check:data', label: 'No real payment data' },
       { script: 'check:secrets', label: 'No tokens or keys (gitleaks)' },
-      { script: 'check:size', label: 'PR size', detail: (out) => out.match(/(\d+) changed lines/)?.[0] },
+      { script: 'check:size', label: 'PR size', detail: RESULT.size },
     ],
   },
   {
@@ -36,14 +36,21 @@ const STAGES = [
         // Changed code only, as in CI: a new file's weak tests can't hide behind the rest of the repo's score.
         script: 'mutation:changed',
         label: 'Mutation score ≥ 80%',
-        detail: (out) => {
-          // Stryker's table row: "All files | 95.24 | ... | killed | timeout | survived | ..."
-          const row = out.match(/All files\s*\|\s*([\d.]+)\s*\|\s*[\d.]+\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)/);
-          if (row) return `${row[1]}% · ${row[2]} killed, ${row[4]} survived`;
-          return /No source files changed/.test(out) ? 'no source code changed' : undefined;
-        },
+        detail: RESULT.mutation,
         // On failure, show only the surviving mutants: where they are and what the change was.
         focus: /^\[Survived\]|^src\/|^[-+] {3}|break threshold/,
+      },
+    ],
+  },
+  {
+    name: 'Stage 3 · Smoke',
+    gates: [
+      {
+        // Starts the real server and calls it, as CI does.
+        script: 'smoke',
+        label: 'Smoke tests',
+        detail: RESULT.smoke,
+        focus: /✘|Error:|Expected|Received/,
       },
     ],
   },
