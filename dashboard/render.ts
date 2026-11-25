@@ -33,7 +33,7 @@ const day = (iso: string) =>
 
 const fixed = (value: number | null, digits: number) => (value === null ? 'n/a' : value.toFixed(digits));
 
-interface Headline {
+export interface Headline {
   tag: string;
   name: string;
   what: string;
@@ -47,7 +47,7 @@ interface Headline {
 
 const sum = (weeks: Week[], pick: (w: Week) => number) => weeks.reduce((total, w) => total + pick(w), 0);
 
-function headlines(weeks: Week[]): Headline[] {
+export function headlines(weeks: Week[]): Headline[] {
   const last = weeks.slice(-WINDOW_WEEKS);
   // Window i is the 4 weeks ending in week i; the first full window ends in week 4.
   const roll = (metric: (ws: Week[]) => Trend) =>
@@ -78,7 +78,7 @@ function headlines(weeks: Week[]): Headline[] {
   ];
 }
 
-const DIRECTION = {
+export const DIRECTION = {
   better: { icon: '▲', label: 'better', css: 'good' },
   worse: { icon: '▼', label: 'worse', css: 'bad' },
   steady: { icon: '●', label: 'steady', css: 'steady' },
@@ -128,7 +128,7 @@ ${lineChart(h, data.weeks, data.events)}
 </article>`;
 }
 
-const BOX: Record<Quadrant, { label: string; next: string }> = {
+export const BOX: Record<Quadrant, { label: string; next: string }> = {
   good: { label: 'Good', next: 'Evidence and outcome agree.' },
   lucky: { label: 'Lucky', next: 'Nothing has broken yet. Strengthen the tests first.' },
   exposed: { label: 'Exposed', next: 'Start here, with a pilot or support.' },
