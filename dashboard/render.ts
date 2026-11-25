@@ -1,8 +1,8 @@
 // The dashboard page: one static HTML file with inline styles and SVG charts, no JavaScript.
 // The numbers and the rules that read them come from src/dashboard-metrics.ts; this file only lays them out.
 import {
-  changeFailureRate, escapedPer100Releases, feedbackTime, percent, quadrant, riskCoverage,
-  type Quadrant, type QuadrantBars, type Trend, type Week,
+  changeFailureRate, escapedPer100Releases, feedbackTime, quadrant, riskCoverage,
+  WINDOW_WEEKS, type Quadrant, type QuadrantBars, type Trend, type Week,
 } from '../src/dashboard-metrics.ts';
 
 export interface Diagnostics {
@@ -11,6 +11,8 @@ export interface Diagnostics {
   pipelineMinutes: number;
   ciCostPerMergeEur: number;
   openWaivers: number;
+  /** Share of Tier 1 repos on the current version of the Guide, in percent. */
+  guideAdoption: number;
 }
 
 export interface DashboardData {
@@ -37,30 +39,41 @@ interface Headline {
   what: string;
   unit: (v: number | null) => string;
   trend: Trend;
-  weekly: (number | null)[];
+  /** The raw counts behind a rate, so a small number is never hidden behind a percentage. */
+  counts: string;
+  /** The headline value for each 4-week window ending in that week, from the same function as the headline. */
+  rolling: (number | null)[];
 }
 
+const sum = (weeks: Week[], pick: (w: Week) => number) => weeks.reduce((total, w) => total + pick(w), 0);
+
 function headlines(weeks: Week[]): Headline[] {
+  const last = weeks.slice(-WINDOW_WEEKS);
+  // Window i is the 4 weeks ending in week i; the first full window ends in week 4.
+  const roll = (metric: (ws: Week[]) => Trend) =>
+    weeks.slice(WINDOW_WEEKS - 1).map((_, i) => metric(weeks.slice(0, i + WINDOW_WEEKS)).current);
+  const releases = sum(last, (w) => w.releases);
+  const lastWeek = weeks.at(-1);
   return [
     {
       tag: 'Stability', name: 'Change failure rate', what: 'Releases that caused a rollback, hotfix or incident',
-      unit: (v) => `${fixed(v, 1)}%`, trend: changeFailureRate(weeks),
-      weekly: weeks.map((w) => percent(w.failedReleases, w.releases)),
+      unit: (v) => `${fixed(v, 1)}%`, trend: changeFailureRate(weeks), rolling: roll(changeFailureRate),
+      counts: `${sum(last, (w) => w.failedReleases)} of ${releases} releases`,
     },
     {
       tag: 'Stability', name: 'Tier 1 escaped defects', what: 'Money, identity and access bugs found in production',
-      unit: (v) => `${fixed(v, 1)} per 100 releases`, trend: escapedPer100Releases(weeks),
-      weekly: weeks.map((w) => percent(w.tier1Escaped, w.releases)),
+      unit: (v) => `${fixed(v, 1)} per 100 releases`, trend: escapedPer100Releases(weeks), rolling: roll(escapedPer100Releases),
+      counts: `${sum(last, (w) => w.tier1Escaped)} defects in ${releases} releases`,
     },
     {
       tag: 'Speed', name: 'Feedback time', what: 'Median time from PR opened to evidence ready',
-      unit: (v) => `${fixed(v, 1)} min`, trend: feedbackTime(weeks),
-      weekly: weeks.map((w) => w.feedbackMinutes),
+      unit: (v) => `${fixed(v, 1)} min`, trend: feedbackTime(weeks), rolling: roll(feedbackTime),
+      counts: 'average of the weekly medians',
     },
     {
       tag: 'Strength', name: 'Tier 1 Risk Coverage', what: 'Listed Tier 1 risks with a test that kills its mutants',
-      unit: (v) => `${fixed(v, 0)}%`, trend: riskCoverage(weeks),
-      weekly: weeks.map((w) => percent(w.risksCovered, w.risksListed)),
+      unit: (v) => `${fixed(v, 0)}%`, trend: riskCoverage(weeks), rolling: roll(riskCoverage),
+      counts: lastWeek ? `${lastWeek.risksCovered} of ${lastWeek.risksListed} risks` : '',
     },
   ];
 }
@@ -71,10 +84,14 @@ const DIRECTION = {
   steady: { icon: '●', label: 'steady', css: 'steady' },
 } as const;
 
-/** A 12-week line with the event marked, one point per week. Hover a point for its value. */
-function lineChart(h: Headline, weeks: Week[], events: DashboardData['events']): string {
+/**
+ * The headline value over time: one point per 4-week window, so the last point is the number above it.
+ * The event is marked. Hover a point for its value.
+ */
+function lineChart(h: Headline, allWeeks: Week[], events: DashboardData['events']): string {
   const W = 320, H = 120, left = 8, right = 8, top = 12, bottom = 22;
-  const values = h.weekly.map((v) => v ?? 0);
+  const weeks = allWeeks.slice(WINDOW_WEEKS - 1);
+  const values = h.rolling.map((v) => v ?? 0);
   const lo = Math.min(...values), hi = Math.max(...values);
   const pad = (hi - lo) * 0.15 || 1;
   const y0 = Math.max(0, lo - pad), y1 = hi + pad;
@@ -87,8 +104,8 @@ function lineChart(h: Headline, weeks: Week[], events: DashboardData['events']):
   }).join('');
   const dots = values.map((v, i) =>
     `<g class="pt"><circle class="hit" cx="${x(i)}" cy="${y(v)}" r="9"/><circle class="dot" cx="${x(i)}" cy="${y(v)}" r="4"/>` +
-    `<title>Week of ${day(weeks[i]!.week)}: ${escape(h.unit(h.weekly[i] ?? null))}</title></g>`).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escape(h.name)}, weekly, ${day(weeks[0]!.week)} to ${day(weeks.at(-1)!.week)}">
+    `<title>4 weeks to ${day(weeks[i]!.week)}: ${escape(h.unit(h.rolling[i] ?? null))}</title></g>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escape(h.name)}, each 4-week window from ${day(weeks[0]!.week)} to ${day(weeks.at(-1)!.week)}">
 <line class="base" x1="${left}" x2="${W - right}" y1="${H - bottom}" y2="${H - bottom}"/>${marks}
 <polyline class="line" points="${points}"/>${dots}
 <text class="axis" x="${left}" y="${H - 4}">${day(weeks[0]!.week)}</text>
@@ -105,7 +122,7 @@ function tile(h: Headline, data: DashboardData): string {
   const d = DIRECTION[h.trend.direction];
   return `<article class="tile">
 <p class="tag">${h.tag}</p><h3>${h.name}</h3><p class="what">${h.what}</p>
-<p class="value">${bigNumber(h.unit(h.trend.current))}</p>
+<p class="value">${bigNumber(h.unit(h.trend.current))}</p><p class="counts">${escape(h.counts)}</p>
 <p class="delta ${d.css}"><span aria-hidden="true">${d.icon}</span> ${d.label} · was ${escape(h.unit(h.trend.previous))} in the 4 weeks before</p>
 ${lineChart(h, data.weeks, data.events)}
 </article>`;
@@ -137,6 +154,8 @@ function goodOrLucky(data: DashboardData): string {
 <line class="base" x1="${left}" x2="${left}" y1="${top}" y2="${H - bottom}"/>
 <line class="bar" x1="${x(data.bars.coveragePercent)}" x2="${x(data.bars.coveragePercent)}" y1="${top}" y2="${H - bottom}"/>
 <line class="bar" x1="${left}" x2="${W - right}" y1="${y(data.bars.escapedPer100)}" y2="${y(data.bars.escapedPer100)}"/>
+<text class="axis" x="${x(data.bars.coveragePercent) + 6}" y="${H - bottom - 30}">${data.bars.coveragePercent}% bar</text>
+<text class="axis" x="${W - right - 10}" y="${y(data.bars.escapedPer100) - 6}" text-anchor="end">${data.bars.escapedPer100} per 100 bar</text>
 ${corner('exposed', left + 10, top + 16, 'start')}${corner('wrong-risks', W - right - 10, top + 16, 'end')}
 ${corner('lucky', left + 10, H - bottom - 10, 'start')}${corner('good', W - right - 10, H - bottom - 10, 'end')}
 ${teams}
@@ -154,15 +173,17 @@ function diagnostics(data: DashboardData): string {
     ['Pipeline duration, median', 'pipelineMinutes', (v) => `${v} min`],
     ['CI cost per merge', 'ciCostPerMergeEur', (v) => `€${v.toFixed(2)}`],
     ['Open waivers', 'openWaivers', (v) => String(v)],
+    ['Guide adoption, Tier 1 repos on the current Guide', 'guideAdoption', (v) => `${v}%`],
   ];
-  return rows.map(([name, key, show]) => `<tr><th scope="row">${name}</th><td>${show(before[key])}</td><td>${show(now[key])}</td></tr>`).join('');
+  return rows.map(([name, key, show]) => `<tr><th scope="row">${name}</th><td>${show(before[key])}</td><td>${show(now[key])}</td></tr>`).join('') +
+    '<tr><th scope="row">AI Advisor acted-on rate</th><td colspan="2">Not running yet: the Advisor starts in Trial in Q3</td></tr>';
 }
 
 function weeklyTable(data: DashboardData, hs: Headline[]): string {
   const head = hs.map((h) => `<th scope="col">${h.name}</th>`).join('');
-  const rows = data.weeks.map((w, i) =>
-    `<tr><th scope="row">${day(w.week)}</th>${hs.map((h) => `<td>${escape(h.unit(h.weekly[i] ?? null))}</td>`).join('')}</tr>`).join('');
-  return `<table><thead><tr><th scope="col">Week of</th>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+  const rows = data.weeks.slice(WINDOW_WEEKS - 1).map((w, i) =>
+    `<tr><th scope="row">${day(w.week)}</th>${hs.map((h) => `<td>${escape(h.unit(h.rolling[i] ?? null))}</td>`).join('')}</tr>`).join('');
+  return `<table><thead><tr><th scope="col">4 weeks to</th>${head}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 export function renderDashboard(data: DashboardData): string {
@@ -189,7 +210,8 @@ h1 { font-size:28px; margin:0 0 4px; } h2 { font-size:20px; margin:40px 0 12px; 
 .tag { margin:0; font-size:13px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--accent); }
 .what { margin:2px 0 8px; font-size:14px; }
 .value { margin:0; font-size:32px; font-weight:650; } .unit { font-size:16px; font-weight:500; color:var(--muted); }
-.delta { margin:0 0 8px; font-size:14px; font-weight:600; } .good { color:var(--good); } .bad { color:var(--bad); } .steady { color:var(--muted); }
+.counts { margin:0; font-size:13px; color:var(--muted); }
+.delta { margin:4px 0 8px; font-size:14px; font-weight:600; } .good { color:var(--good); } .bad { color:var(--bad); } .steady { color:var(--muted); }
 svg { width:100%; height:auto; display:block; overflow:visible; }
 .line { fill:none; stroke:var(--series); stroke-width:2; } .dot { fill:var(--series); stroke:var(--card); stroke-width:2; }
 .hit { fill:transparent; } .pt:hover .dot { r:6; }
@@ -213,7 +235,7 @@ footer { margin-top:48px; font-size:14px; } a { color:var(--series); }
 <p class="note">${escape(data.note)}</p>
 
 <section class="tiles" aria-label="Headline metrics">${hs.map((h) => tile(h, data)).join('')}</section>
-${event ? `<p class="axis-note">Dashed line: ${escape(event.label)}, week of ${day(event.week)}.</p>` : ''}
+<p class="axis-note">Each point is the 4 weeks to that date, the same window as the number above it.${event ? ` Dashed line: ${escape(event.label)}, week of ${day(event.week)}.` : ''}</p>
 
 <section class="worse-box" aria-labelledby="worse"><h2 id="worse">What isn’t working</h2>
 ${data.whatIsntWorking.map((p) => `<p>${escape(p)}</p>`).join('')}</section>
@@ -229,7 +251,7 @@ ${data.whatIsntWorking.map((p) => `<p>${escape(p)}</p>`).join('')}</section>
 <div class="scroll"><table><thead><tr><th scope="col">Diagnostic</th><th scope="col">4 weeks before</th><th scope="col">Last week</th></tr></thead>
 <tbody>${diagnostics(data)}</tbody></table></div>
 
-<details><summary>Every week, as a table</summary><div class="scroll">${weeklyTable(data, hs)}</div></details>
+<details><summary>Every 4-week window, as a table</summary><div class="scroll">${weeklyTable(data, hs)}</div></details>
 
 <footer>Built from <code>dashboard/data.json</code> by <code>npm run dashboard</code>. Definitions: <code>src/dashboard-metrics.ts</code>.
 Source: <a href="https://github.com/ksycz/quality-golden-path">github.com/ksycz/quality-golden-path</a></footer>

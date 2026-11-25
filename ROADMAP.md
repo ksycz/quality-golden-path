@@ -25,18 +25,20 @@ In the order it landed.
 | 13 | test: smoke tests | A small HTTP API around the limit check (`npm start`), unit tests for its routing and input checks, and four Playwright API smoke tests against the running server. Stage 3 in CI, beside mutation |
 | 14 | ci: clearer run page | Jobs named by what they check, a final check called `gate · can this PR merge?`, a Detail column on the Summary page, and the surviving mutants listed with the line of code they changed |
 | 15 | ci: quiet Vitest summary | Vitest no longer adds its own report to the Summary page once per mutant |
+| 16 | feat: transfer page | A page where a customer sends transfers and sees what is left of today's limit, on the same API |
+| 17 | test: end-to-end tests | Playwright in Chromium on the transfer page, one test per Tier 1 risk. Stage 4 in CI, with a trace and report kept when a test fails |
+| 18 | ci: PR description check | Cheap checks fail a PR whose description skips the template's sections, or whose "How to test locally" has only the default commands |
 
 ## Next
 
-In the order they will be built. The first two are what the deck still relies on.
+In the order they will be built. The first one is what the deck still relies on.
 
 | # | Item | Why | Half of the motto |
 |---|---|---|---|
-| 1 | End-to-end tests | A simple transfer page on that service, and Playwright tests of the whole customer journey: send transfers through the day, reach the limit exactly, then see the rejection and the amount left. Covers the Tier 1 risks from the customer's side | Prove it |
-| 2 | Dashboard on GitHub Pages | The four headline metrics on synthetic data, including one that is getting worse | Confirm it |
-| 3 | Scheduled synthetic check | A Playwright check against the live dashboard every few hours; a failure opens an issue | Confirm it |
-| 4 | Renovate | Dependency updates as small PRs, held for a week after release, so they go through the same gates | Prove it |
-| 5 | Agent git guardrails | A Claude Code hook that blocks force pushes, pushes to `main` and other destructive git commands | Prove it |
+| 1 | Dashboard on GitHub Pages | The four headline metrics on synthetic data, including one that is getting worse | Confirm it |
+| 2 | Scheduled synthetic check | A Playwright check against the live dashboard every few hours; a failure opens an issue | Confirm it |
+| 3 | Renovate | Dependency updates as small PRs, held for a week after release, so they go through the same gates | Prove it |
+| 4 | Agent git guardrails | A Claude Code hook that blocks force pushes, pushes to `main` and other destructive git commands | Prove it |
 
 ## Later
 
