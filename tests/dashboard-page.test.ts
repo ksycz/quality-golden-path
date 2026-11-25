@@ -10,7 +10,7 @@ const text = page.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 describe('the dashboard page', () => {
   it('shows the four headline metrics, each with its number now', () => {
     expect(text).toContain('Change failure rate');
-    expect(text).toContain('7.5% ▲ better · was 9.9%');
+    expect(text).toContain('7.5% 15 of 199 releases ▲ better · was 9.9%');
     expect(text).toContain('Tier 1 escaped defects');
     expect(text).toContain('1.0 per 100 releases');
     expect(text).toContain('Feedback time');
@@ -32,6 +32,17 @@ describe('the dashboard page', () => {
   it('labels every team on the good or lucky chart, with its box in the hover text', () => {
     expect(page).toContain('Fremen: Risk Coverage 82%, 0.4 escaped per 100 releases (Good)');
     expect(page).toContain('House Atreides: Risk Coverage 79%, 2.1 escaped per 100 releases (Wrong risks)');
+  });
+
+  it('plots 4-week windows, so the last point of each chart is the number above it', () => {
+    expect(page).toContain('<title>4 weeks to 23 Nov: 7.5%</title>');
+    expect(page).toContain('<title>4 weeks to 23 Nov: 13.5 min</title>');
+  });
+
+  it('shows the counts behind each rate', () => {
+    expect(text).toContain('15 of 199 releases');
+    expect(text).toContain('2 defects in 199 releases');
+    expect(text).toContain('31 of 40 risks');
   });
 
   it('says the data is synthetic', () => {
