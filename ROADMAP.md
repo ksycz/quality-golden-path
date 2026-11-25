@@ -18,7 +18,7 @@ The order follows the motto: first **prove it before release**, then **confirm i
 | Item | Why | Half of the motto |
 |---|---|---|
 | Make `gate` a required check on `main` | Until it is required, a red gate can still be merged | Prove it |
-| PR size warning | Reviewers catch fewer defects in big changes, and agents make big changes cheap. Warn above 400 changed lines; above 1,000, the PR needs a written reason | Prove it |
+| PR size warning | Reviewers catch fewer defects in big changes, and agents make big changes cheap. Warn above 400 changed lines; above 1,000, the PR needs a written reason. Renames, moves, lockfiles and generated files don't count. Refactors get no automatic exception, because anyone can type `refactor:`; a large one gives its reason in one line. The Guide adds: keep refactors and behaviour changes in separate PRs | Prove it |
 | Smoke tests | A tiny HTTP service around the limit check, and a few fast Playwright checks that it starts, answers and applies the limit. Runs as Stage 3 in CI | Prove it |
 | End-to-end tests | A simple transfer page on that service, and Playwright tests of the whole customer journey: send transfers through the day, reach the limit exactly, then see the rejection and the amount left. Covers the Tier 1 risks from the customer's side | Prove it |
 | Demo PR with weak tests | Tests that reach 100% coverage and still miss the limit edge. The mutation gate blocks it, which shows why coverage alone is not enough | Prove it |
