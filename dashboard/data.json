@@ -24,22 +24,22 @@
   ],
   "teams": [
     {
-      "name": "Clan Sandrider",
+      "name": "House Atreides",
       "coveragePercent": 82,
       "escapedPer100": 0.4
     },
     {
-      "name": "Clan Spicewind",
+      "name": "House Corrino",
       "coveragePercent": 38,
       "escapedPer100": 0.5
     },
     {
-      "name": "Clan Deep Desert",
+      "name": "House Harkonnen",
       "coveragePercent": 41,
       "escapedPer100": 2.6
     },
     {
-      "name": "Clan Stillwater",
+      "name": "House Vernius",
       "coveragePercent": 79,
       "escapedPer100": 2.1
     }
