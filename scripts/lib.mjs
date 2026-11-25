@@ -79,5 +79,6 @@ export const RESULT = {
     if (row) return `${row[1]}% · ${row[2]} killed, ${row[4]} survived`;
     return /No source files changed/.test(out) ? 'no source code changed' : undefined;
   },
-  smoke: (out) => out.match(/(\d+) (?:passed|failed)/g)?.join(', '),
+  // In CI two Playwright reporters print the same counts, so each one is kept once.
+  smoke: (out) => [...new Set(out.match(/\d+ (?:passed|failed)/g))].join(', ') || undefined,
 };
