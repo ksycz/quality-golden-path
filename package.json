@@ -18,7 +18,7 @@
     "check:risks": "node scripts/risk-check.mjs",
     "check:names": "node scripts/name-guard.mjs",
     "check:title": "node scripts/pr-title.mjs",
-    "gates": "npm run lint && npm run typecheck && npm test && npm run check:risks && npm run check:names && npm run check:data && npm run mutation",
+    "gates": "node scripts/gates.mjs",
     "check:data": "node scripts/data-scan.mjs"
   },
   "devDependencies": {

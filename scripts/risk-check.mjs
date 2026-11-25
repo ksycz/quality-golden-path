@@ -5,7 +5,7 @@
 // tests in step: a new risk without a test, or a deleted test, shows up straight away.
 
 import { readFileSync } from 'node:fs';
-import { fail, trackedTextFiles } from './lib.mjs';
+import { fail, pass, trackedTextFiles } from './lib.mjs';
 
 // Read the risk IDs from lines like "  - id: RISK-TL-BOUNDARY".
 const riskIds = [...readFileSync('risks.yml', 'utf8').matchAll(/^\s*-\s*id:\s*(\S+)/gm)].map((m) => m[1]);
@@ -18,4 +18,4 @@ const tests = trackedTextFiles()
 
 const untested = riskIds.filter((id) => !tests.includes(id));
 if (untested.length > 0) fail(`Risks without a test naming them: ${untested.join(', ')}`);
-console.log(`✓ All ${riskIds.length} risks in risks.yml have a test naming them`);
+pass(`All ${riskIds.length} risks in risks.yml have a test naming them`);

@@ -7,7 +7,7 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { fail, trackedTextFiles } from './lib.mjs';
+import { fail, pass, trackedTextFiles } from './lib.mjs';
 
 // Load the hashes: one 64-character hex string per line; comment lines are ignored.
 const denied = new Set(
@@ -31,4 +31,4 @@ for (const file of trackedTextFiles()) {
     });
 }
 if (hits.length > 0) fail(`Denied name found at:\n  ${hits.join('\n  ')}`);
-console.log(`✓ No denied names in tracked files`);
+pass(`No denied names in tracked files`);

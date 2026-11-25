@@ -40,7 +40,7 @@ npm ci      # install exactly the versions in package-lock.json
 | `npm run check:title -- "feat: x"` | Checks a PR title against Conventional Commits | <1 s |
 | `npm run mutation` | Mutation testing on all code; report in `reports/mutation/index.html` | ~5 s here |
 | `npm run mutation:changed` | Mutation testing only on `src/` files changed vs `origin/main` | varies |
-| `npm run gates` | Everything above in order, the same checks CI runs | ~10 s here |
+| `npm run gates` | Everything above in order, the same checks CI runs, with one PASS/FAIL/SKIP report; on failure it shows only what broke | ~10 s here |
 
 ```bash
 npm run gates                       # run every gate locally before opening a PR

@@ -98,6 +98,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: All applicable gates passed
+        # Job results come in through env, never pasted into the script.
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          CHEAP: ${{ needs.cheap.result }}
+          FAST: ${{ needs.fast.result }}
+          EVIDENCE: ${{ needs.evidence.result }}
         run: |
-          echo "changes=${{ needs.changes.result }} cheap=${{ needs.cheap.result }} fast=${{ needs.fast.result }} evidence=${{ needs.evidence.result }}"
-          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then exit 1; fi
+          # Turn a job result into a badge for the run page.
+          badge() {
+            case "$1" in
+              success) echo "🟢 PASS" ;;
+              skipped) echo "⚪ SKIP (not needed for these files, or an earlier stage failed)" ;;
+              *)       echo "🔴 FAIL ($1)" ;;
+            esac
+          }
+          # Write a results table to the run's Summary page on GitHub.
+          {
+            echo "## Quality gates"
+            echo ""
+            echo "| Stage | What it checks | Result |"
+            echo "|---|---|---|"
+            echo "| Changes | Which files changed, so docs-only PRs skip the heavy gates | $(badge "$CHANGES") |"
+            echo "| Cheap | PR title, name guard, secret scan | $(badge "$CHEAP") |"
+            echo "| Fast | Lint, types, tests, risks have tests, no real payment data | $(badge "$FAST") |"
+            echo "| Evidence | Mutation score on changed code | $(badge "$EVIDENCE") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Fail the required check if any job failed or was cancelled; skipped is fine.
+          for result in "$CHANGES" "$CHEAP" "$FAST" "$EVIDENCE"; do
+            if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+              echo "::error::A quality gate failed. See the Summary table."
+              exit 1
+            fi
+          done
+          echo "All applicable gates passed."

@@ -5,7 +5,7 @@
 // paste realistic-looking data into fixtures. This catches it before it is committed to main.
 
 import { readFileSync } from 'node:fs';
-import { fail, trackedTextFiles } from './lib.mjs';
+import { fail, pass, trackedTextFiles } from './lib.mjs';
 
 // The Luhn checksum that every real card number passes. Random digit strings usually fail it,
 // so checking it avoids flagging ordinary long numbers.
@@ -35,4 +35,4 @@ for (const file of trackedTextFiles().filter((f) => f !== 'package-lock.json')) 
     });
 }
 if (hits.length > 0) fail(`Real-looking payment data found:\n  ${hits.join('\n  ')}`);
-console.log('✓ No real-looking payment data in tracked files');
+pass('No real-looking payment data in tracked files');
