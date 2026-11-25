@@ -45,6 +45,8 @@ Ideas worth doing once the above is in place. Each needs more than this repo has
 - **Flaky test quarantine.** Move a flaky test out of the required gate automatically, with an owner and a deadline to fix it.
 - **AI Advisor.** An AI reviewer that comments on PRs, checked against a set of known good and bad PRs before anyone relies on it. It advises; a person still approves.
 - **Canary release.** Send a small share of real traffic to a new version and roll back on errors. Needs a real deployment.
+- **Accessibility checks.** Run @axe-core/playwright on the transfer page in Stage 4, so a missing label or poor contrast fails the PR.
+- **More browsers.** Add Firefox and WebKit to the e2e projects once customers use them enough to justify the extra CI time.
 
 ## Not planned
 
