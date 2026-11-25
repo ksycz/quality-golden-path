@@ -64,3 +64,20 @@ export function changedFilesWithLocal(base = process.env.BASE_REF ?? 'origin/mai
   const added = git('ls-files', '--others', '--exclude-standard').split('\n');
   return [...new Set([...edited, ...added])].filter(Boolean);
 }
+
+/**
+ * One-line results pulled from a gate's output, e.g. "38 passed". Shared by `npm run gates`
+ * (the laptop report) and scripts/ci-summary.mjs (the GitHub run summary), so both say the same thing.
+ */
+export const RESULT = {
+  tests: (out) => out.match(/Tests\s+(\d+ (?:failed|passed)[^\n(]*)/)?.[1]?.trim(),
+  risks: (out) => out.match(/All (\d+) risks/)?.[1]?.concat(' risks covered'),
+  size: (out) => out.match(/(\d+) changed lines/)?.[0],
+  mutation: (out) => {
+    // Stryker's table row: "All files | 95.24 | ... | killed | timeout | survived | ..."
+    const row = out.match(/All files\s*\|\s*([\d.]+)\s*\|\s*[\d.]+\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)/);
+    if (row) return `${row[1]}% · ${row[2]} killed, ${row[4]} survived`;
+    return /No source files changed/.test(out) ? 'no source code changed' : undefined;
+  },
+  smoke: (out) => out.match(/(\d+) (?:passed|failed)/g)?.join(', '),
+};
