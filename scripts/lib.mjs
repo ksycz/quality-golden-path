@@ -49,3 +49,6 @@ export const fail = (message) => {
   console.error(`${c.red('✗')} ${c.red(message)}`);
   process.exit(1);
 };
+
+// Exit code a check uses when its tool isn't installed on this machine. The gate report shows it as SKIP.
+export const SKIP_CODE = 78;

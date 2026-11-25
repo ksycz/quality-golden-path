@@ -37,6 +37,7 @@ npm ci      # install exactly the versions in package-lock.json
 | `npm run check:risks` | Fails if a risk in `risks.yml` has no test naming it | <1 s |
 | `npm run check:names` | Fails if a word from the hashed deny list appears in any file | <1 s |
 | `npm run check:data` | Fails on real-looking card numbers or IBANs | <1 s |
+| `npm run check:secrets` | Runs gitleaks for tokens, keys and passwords before you push. Shows SKIP if gitleaks isn't installed (`brew install gitleaks`); CI always scans | <1 s |
 | `npm run check:title -- "feat: x"` | Checks a PR title against Conventional Commits | <1 s |
 | `npm run mutation` | Mutation testing on all code; report in `reports/mutation/index.html` | ~5 s here |
 | `npm run mutation:changed` | Mutation testing only on `src/` files changed vs `origin/main` | varies |

@@ -6,7 +6,7 @@
 // so a green run is one short table and a red run shows exactly what broke.
 
 import { spawnSync } from 'node:child_process';
-import { c } from './lib.mjs';
+import { c, SKIP_CODE } from './lib.mjs';
 
 // Each gate: the npm script to run, a readable name, and how to pull one key number from its output.
 const STAGES = [
@@ -25,6 +25,7 @@ const STAGES = [
       { script: 'check:risks', label: 'Risks have tests', detail: (out) => out.match(/All (\d+) risks/)?.[1]?.concat(' risks covered') },
       { script: 'check:names', label: 'Name guard' },
       { script: 'check:data', label: 'No real payment data' },
+      { script: 'check:secrets', label: 'No tokens or keys (gitleaks)' },
     ],
   },
   {
@@ -64,6 +65,12 @@ for (const stage of STAGES) {
     const run = spawnSync('npm', ['run', '-s', gate.script], { encoding: 'utf8', env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' } });
     const seconds = ((Date.now() - start) / 1000).toFixed(1);
     const output = `${run.stdout ?? ''}${run.stderr ?? ''}`;
+    // A gate whose tool isn't installed here exits with SKIP_CODE: shown as SKIP, never as a silent pass.
+    if (run.status === SKIP_CODE) {
+      results.push({ ...gate, status: 'SKIP', seconds });
+      console.log(`  ${c.inverseAmber(' SKIP ')}  ${gate.label.padEnd(WIDTH)} ${c.dim(`${seconds.padStart(5)}s`)}  ${c.amber(output.trim().replace(/^–\s*/, ''))}`);
+      continue;
+    }
     const ok = run.status === 0;
     const detail = gate.detail?.(output) ?? '';
     results.push({ ...gate, status: ok ? 'PASS' : 'FAIL', seconds, detail });
@@ -86,8 +93,11 @@ for (const stage of STAGES) {
 const total = ((Date.now() - startAll) / 1000).toFixed(1);
 const passed = results.filter((r) => r.status === 'PASS').length;
 const failed = results.filter((r) => r.status === 'FAIL');
+const skipped = results.filter((r) => r.status === 'SKIP');
 if (failed.length === 0) {
   console.log(`  ${c.green('✓')} ${c.bold(`${passed} of ${results.length} gates passed`)} ${c.dim(`in ${total}s`)}  · ready for a pull request`);
+  // Say plainly what didn't run, so a skipped gate never looks like a pass.
+  if (skipped.length > 0) console.log(c.amber(`    Not run here: ${skipped.map((r) => r.label).join(', ')}`));
   console.log(c.dim('    Mutation report: reports/mutation/index.html\n'));
 } else {
   console.log(`  ${c.red('✗')} ${c.bold(c.red(`${failed.length} failed: ${failed.map((f) => f.label).join(', ')}`))} ${c.dim(`in ${total}s`)}\n`);
