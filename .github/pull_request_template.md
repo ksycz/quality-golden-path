@@ -13,9 +13,8 @@
 ## How to test locally
 
 ```bash
-npm ci
-npm run typecheck
-npm test
+npm ci          # install exact dependency versions
+npm run gates   # run every gate CI runs, including mutation testing
 ```
 
 <!-- Add the exact steps a reviewer can run to see this change work. -->
