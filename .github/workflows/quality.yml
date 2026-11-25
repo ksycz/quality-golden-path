@@ -11,8 +11,8 @@ run-name: >-
 
 on:
   pull_request:
-    # "edited" re-runs the gates when the title or description changes, so fixing the title or adding
-    # a "Large PR:" reason clears the failure. Everything re-runs, because the latest run decides "gate".
+    # "edited" re-runs the gates when the title or description changes, so fixing the title, the
+    # description or adding a "Large PR:" reason clears the failure. Everything re-runs, because the latest run decides "gate".
     types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
@@ -51,7 +51,7 @@ jobs:
 
   # Checks that cost seconds, so they run on every change, docs included.
   cheap:
-    name: "Cheap checks · PR title, names, size, secrets"
+    name: "Cheap checks · PR title and description, names, size, secrets"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -61,6 +61,12 @@ jobs:
         run: node scripts/pr-title.mjs
         env:
           PR_TITLE: ${{ github.event.pull_request.title }} # passed as env, never interpolated into the script
+      # The description follows the PR template, and "How to test locally" has this change's own steps.
+      - name: PR description follows the template
+        if: github.event_name == 'pull_request'
+        run: node scripts/pr-description.mjs
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }} # passed as env, never interpolated into the script
       - name: Name guard
         run: node scripts/name-guard.mjs
       # Warns above pr_size_warn changed lines; fails above pr_size_max unless the description says why.
