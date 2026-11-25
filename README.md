@@ -34,6 +34,7 @@ npm ci      # install exactly the versions in package-lock.json
 | `npm run test:watch` | Re-runs the tests every time you save a file | |
 | `npm start` | Starts the transfer page on http://127.0.0.1:4310/ (add `?customer=ana` to be another customer) and its API: `GET /health`, `POST /transfers/decision`, `POST /transfers`, `GET /transfers/today` | |
 | `npm run smoke` | Smoke tests: Playwright starts the real server and calls it. No browser needed | ~1 s |
+| `npm run e2e` | End-to-end tests: Playwright drives the transfer page in Chromium through a customer's day. Shows SKIP if Chromium isn't installed (`npx playwright install chromium`); CI always runs them | ~5 s |
 | `npm run typecheck` | Checks TypeScript types without building anything | ~1 s |
 | `npm run lint` | ESLint: likely bugs and unused code | ~1 s |
 | `npm run check:risks` | Fails if a risk in `risks.yml` has no test naming it | <1 s |

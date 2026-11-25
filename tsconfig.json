@@ -13,5 +13,5 @@
     "allowImportingTsExtensions": true, // imports end in .ts, so Node can run the server without a build
     "erasableSyntaxOnly": true          // only TypeScript that Node can strip: no enums or namespaces
   },
-  "include": ["src", "tests", "smoke", "playwright.config.ts"]
+  "include": ["src", "tests", "smoke", "e2e", "playwright.config.ts"]
 }

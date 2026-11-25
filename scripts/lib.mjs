@@ -81,4 +81,5 @@ export const RESULT = {
   },
   // In CI two Playwright reporters print the same counts, so each one is kept once.
   smoke: (out) => [...new Set(out.match(/\d+ (?:passed|failed)/g))].join(', ') || undefined,
+  e2e: (out) => RESULT.smoke(out),
 };

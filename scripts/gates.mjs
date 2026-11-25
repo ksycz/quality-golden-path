@@ -1,7 +1,8 @@
 // Runs every quality gate locally and prints one test-report summary.
 // Run: npm run gates
 //
-// Same gates as CI: Stage 1 (fast checks), then Stage 2 (mutation testing) and Stage 3 (smoke tests),
+// Same gates as CI: Stage 1 (fast checks), then Stage 2 (mutation testing), Stage 3 (smoke tests)
+// and Stage 4 (end-to-end tests),
 // each only if the stages before it passed. Each gate's own output is hidden unless it fails,
 // so a green run is one short table and a red run shows exactly what broke.
 
@@ -50,6 +51,18 @@ const STAGES = [
         script: 'smoke',
         label: 'Smoke tests',
         detail: RESULT.smoke,
+        focus: /✘|Error:|Expected|Received/,
+      },
+    ],
+  },
+  {
+    name: 'Stage 4 · End to end',
+    gates: [
+      {
+        // A real browser on the transfer page. Shows SKIP if Chromium isn't installed here.
+        script: 'e2e',
+        label: 'End-to-end tests',
+        detail: RESULT.e2e,
         focus: /✘|Error:|Expected|Received/,
       },
     ],

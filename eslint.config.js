@@ -1,5 +1,6 @@
 // ESLint settings for `npm run lint`: catches likely bugs and unused code before review.
 import js from '@eslint/js';
+import playwright from 'eslint-plugin-playwright';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
@@ -12,5 +13,11 @@ export default tseslint.config(
     // The gate scripts run in Node, so they may use Node's globals.
     files: ['scripts/**/*.mjs'],
     languageOptions: { globals: { process: 'readonly', console: 'readonly' } },
+  },
+  {
+    // Playwright's recommended rules for the browser and smoke tests.
+    // The one that matters most: an assertion without await never runs, so the test passes whatever the page shows.
+    ...playwright.configs['flat/recommended'],
+    files: ['e2e/**', 'smoke/**'],
   },
 );
