@@ -1,5 +1,6 @@
 # Quality gates for every pull request and every push to main.
-# Order: work out which gates apply → cheap checks → Stage 1 (fast) → Stage 2 (mutation) → one final "gate" result.
+# Order: work out which gates apply → cheap checks → Stage 1 (fast) → Stage 2 (mutation) and Stage 3 (smoke) side by side
+# → one final "gate" result.
 # Only "gate" is a required check on main, so one name covers every job that applies to the change.
 name: quality
 
@@ -102,10 +103,25 @@ jobs:
         env:
           BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD~1' }}
 
+  # Stage 3: start the real service and call it. Runs beside Stage 2, since neither needs the other.
+  smoke:
+    name: Stage 3 · Smoke
+    needs: [changes, fast]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci --ignore-scripts
+      # API calls only, so no browser download. Playwright starts and stops the server.
+      - run: npm run smoke
+
   gate:
     name: gate
     # The single required check. Skipped jobs count as passed; failed or cancelled ones don't.
-    needs: [changes, cheap, fast, evidence]
+    needs: [changes, cheap, fast, evidence, smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -116,6 +132,7 @@ jobs:
           CHEAP: ${{ needs.cheap.result }}
           FAST: ${{ needs.fast.result }}
           EVIDENCE: ${{ needs.evidence.result }}
+          SMOKE: ${{ needs.smoke.result }}
         run: |
           # Turn a job result into a badge for the run page.
           badge() {
@@ -135,9 +152,10 @@ jobs:
             echo "| Cheap | PR title, name guard, PR size, secret scan | $(badge "$CHEAP") |"
             echo "| Fast | Lint, types, tests, risks have tests, no real payment data | $(badge "$FAST") |"
             echo "| Evidence | Mutation score on changed code | $(badge "$EVIDENCE") |"
+            echo "| Smoke | The real service starts and answers | $(badge "$SMOKE") |"
           } >> "$GITHUB_STEP_SUMMARY"
           # Fail the required check if any job failed or was cancelled; skipped is fine.
-          for result in "$CHANGES" "$CHEAP" "$FAST" "$EVIDENCE"; do
+          for result in "$CHANGES" "$CHEAP" "$FAST" "$EVIDENCE" "$SMOKE"; do
             if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
               echo "::error::A quality gate failed. See the Summary table."
               exit 1

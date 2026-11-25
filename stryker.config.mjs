@@ -3,7 +3,8 @@
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
   testRunner: 'vitest',               // run mutants with our normal Vitest tests
-  mutate: ['src/**/*.ts'],            // mutate production code only, never the tests
+  // Production code only, never the tests. server.ts is wiring with no logic; the smoke tests cover it.
+  mutate: ['src/**/*.ts', '!src/server.ts'],
   reporters: ['clear-text', 'progress', 'html', 'json'],
   htmlReporter: { fileName: 'reports/mutation/index.html' }, // open in a browser to see each mutant
   jsonReporter: { fileName: 'reports/mutation/mutation.json' }, // read by the dashboard later

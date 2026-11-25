@@ -32,6 +32,8 @@ npm ci      # install exactly the versions in package-lock.json
 |---|---|---|
 | `npm test` | Runs the example and property-based tests once | ~1 s |
 | `npm run test:watch` | Re-runs the tests every time you save a file | |
+| `npm start` | Starts the transfer limit API on http://127.0.0.1:4310 (`GET /health`, `POST /transfers/decision`) | |
+| `npm run smoke` | Smoke tests: Playwright starts the real server and calls it. No browser needed | ~1 s |
 | `npm run typecheck` | Checks TypeScript types without building anything | ~1 s |
 | `npm run lint` | ESLint: likely bugs and unused code | ~1 s |
 | `npm run check:risks` | Fails if a risk in `risks.yml` has no test naming it | <1 s |

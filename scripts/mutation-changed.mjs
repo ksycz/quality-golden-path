@@ -8,9 +8,13 @@
 
 import { execFileSync } from 'node:child_process';
 import { changedFilesWithLocal } from './lib.mjs';
+import stryker from '../stryker.config.mjs';
+
+// Files stryker.config.mjs excludes with "!path" stay excluded here too.
+const excluded = new Set(stryker.mutate.filter((p) => p.startsWith('!')).map((p) => p.slice(1)));
 
 // Includes uncommitted and new files, so running it before a commit checks what you are about to push.
-const changed = changedFilesWithLocal().filter((file) => /^src\/.*\.ts$/.test(file));
+const changed = changedFilesWithLocal().filter((file) => /^src\/.*\.ts$/.test(file) && !excluded.has(file));
 if (changed.length === 0) {
   console.log('✓ No source files changed: mutation gate not needed');
   process.exit(0);
