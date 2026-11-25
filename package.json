@@ -20,7 +20,8 @@
     "check:title": "node scripts/pr-title.mjs",
     "gates": "node scripts/gates.mjs",
     "check:data": "node scripts/data-scan.mjs",
-    "check:secrets": "node scripts/secrets-scan.mjs"
+    "check:secrets": "node scripts/secrets-scan.mjs",
+    "check:size": "node scripts/pr-size.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

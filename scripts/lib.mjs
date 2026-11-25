@@ -52,3 +52,6 @@ export const fail = (message) => {
 
 // Exit code a check uses when its tool isn't installed on this machine. The gate report shows it as SKIP.
 export const SKIP_CODE = 78;
+
+// Exit code a check uses for a warning: shown as WARN in the report, and it doesn't fail the run.
+export const WARN_CODE = 79;
