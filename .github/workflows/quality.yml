@@ -162,8 +162,10 @@ jobs:
         run: node scripts/ci-summary.mjs smoke "$RUNNER_TEMP/smoke.log"
 
   gate:
-    name: gate
-    # The single required check. Skipped jobs count as passed; failed or cancelled ones don't.
+    # The single required check. GitHub requires it by this exact name (ruleset on main and
+    # .github/rulesets/main.json), so renaming it means changing the ruleset in the same step.
+    # Skipped jobs count as passed; failed or cancelled ones don't.
+    name: "gate · can this PR merge?"
     needs: [changes, cheap, fast, evidence, smoke]
     if: always()
     runs-on: ubuntu-latest
