@@ -1,0 +1,53 @@
+<!doctype html>
+<!--
+  The transfer page: a customer sends transfers and sees what is left of today's limit.
+  All rules and wording come from the API (src/send-transfer.ts); this page only shows the answers,
+  so the unit tests cover the logic and the end-to-end tests cover what the customer sees.
+  The customer comes from the URL: /?customer=demo (default "demo").
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Send a transfer</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 28rem; margin: 3rem auto; padding: 0 1rem; color: #1c1f24; background: #f4f2ec; }
+    form { display: flex; gap: 0.5rem; align-items: end; margin: 1.5rem 0; }
+    label { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+    input, button { font: inherit; padding: 0.5rem; }
+    [data-result="approved"] { color: #1a6b35; }
+    [data-result="rejected"], [data-result="error"] { color: #a1260d; }
+  </style>
+</head>
+<body>
+  <h1>Send a transfer</h1>
+  <p>Left today: <strong id="left">…</strong></p>
+  <form id="send">
+    <label>Amount in euros <input id="amount" name="amount" inputmode="decimal" autocomplete="off" required></label>
+    <button type="submit">Send transfer</button>
+  </form>
+  <p id="result" role="status" aria-live="polite"></p>
+  <script type="module">
+    const customer = new URLSearchParams(location.search).get('customer') ?? 'demo';
+    const left = document.querySelector('#left');
+    const result = document.querySelector('#result');
+    const amount = document.querySelector('#amount');
+
+    const today = await fetch(`/transfers/today?customer=${encodeURIComponent(customer)}`).then((r) => r.json());
+    left.textContent = today.leftToday ?? today.error;
+
+    document.querySelector('#send').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const answer = await fetch('/transfers', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ customer, amount: amount.value }),
+      }).then((r) => r.json());
+      result.textContent = answer.message ?? answer.error;
+      result.dataset.result = answer.status ?? 'error';
+      if (answer.leftToday) left.textContent = answer.leftToday;
+      if (answer.status === 'approved') amount.value = '';
+    });
+  </script>
+</body>
+</html>
