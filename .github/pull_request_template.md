@@ -1,0 +1,28 @@
+<!-- Title: Conventional Commits, e.g. "feat: …", "fix: …", "docs: …" -->
+
+## What and why
+
+<!-- One or two sentences. -->
+
+## Tier 1 only
+
+- **Requirement:** <!-- e.g. REQ-TL-1, link to requirements/… -->
+- **Risks touched:** <!-- e.g. RISK-TL-BOUNDARY -->
+- **Test intent:** <!-- In plain words: which behaviour the new tests prove, and how they would fail. -->
+
+## How to test locally
+
+```bash
+npm ci
+npm run typecheck
+npm test
+```
+
+<!-- Add the exact steps a reviewer can run to see this change work. -->
+
+## Checklist
+
+- [ ] No test was removed or weakened (or a human approved it, named here: …)
+- [ ] New dependencies listed with a reason (or none)
+- [ ] Only synthetic data, no secrets
+- [ ] Agent-written: yes / no, and who ran it
