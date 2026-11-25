@@ -2,7 +2,7 @@
 
 What this repo has, what comes next, and what is left out on purpose. Each item lands as one small pull request with a Conventional Commits title, so the history reads like this list.
 
-The plan follows the motto: first **prove it before release**, then **confirm it in production**.
+The plan follows the strategy: first **prove it before release**, then **confirm it in production**.
 
 ## Done
 
@@ -35,9 +35,9 @@ In the order it landed.
 
 ## Next
 
-In the order they will be built. The first one is what the deck still relies on.
+In the order they will be built. The first one closes the biggest gap between the strategy and this repo.
 
-| # | Item | Why | Half of the motto |
+| # | Item | Why | Half of the strategy |
 |---|---|---|---|
 | 1 | Scheduled synthetic check | A Playwright check against the live dashboard every few hours; a failure opens an issue | Confirm it |
 | 2 | Renovate | Dependency updates as small PRs, held for a week after release, so they go through the same gates | Prove it |
