@@ -8,8 +8,14 @@ const port = 4310;
 export default defineConfig({
   forbidOnly: !!process.env.CI,   // a stray test.only must never pass CI
   retries: 0,                     // a flaky test is a bug to fix, not to retry
-  reporter: process.env.CI ? [['github'], ['list']] : 'list',
-  use: { baseURL: `http://127.0.0.1:${port}` },
+  fullyParallel: true,            // every test has its own customer, so tests in one file can run at once
+  // In CI, the HTML report is kept too; the workflow uploads it with the traces when a test fails.
+  reporter: process.env.CI ? [['github'], ['list'], ['html', { open: 'never' }]] : 'list',
+  use: {
+    baseURL: `http://127.0.0.1:${port}`,
+    // A failed test keeps a trace: each step with the page, network and console. Open it with npx playwright show-trace.
+    trace: 'retain-on-failure',
+  },
   projects: [
     { name: 'smoke', testDir: 'smoke', testMatch: '*.smoke.ts' },
     { name: 'e2e', testDir: 'e2e', testMatch: '*.e2e.ts', use: { ...devices['Desktop Chrome'] } },

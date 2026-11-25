@@ -16,7 +16,7 @@ async function send(page: Page, amount: string) {
   await page.getByRole('button', { name: 'Send transfer' }).click();
 }
 
-const leftToday = (page: Page) => page.locator('p', { hasText: 'Left today' });
+const leftToday = (page: Page) => page.getByText('Left today');
 const answer = (page: Page) => page.getByRole('status');
 
 test('RISK-TL-BOUNDARY: two transfers that reach the limit exactly are both sent', async ({ page }) => {
@@ -39,15 +39,16 @@ test('RISK-TL-PARTIAL: one cent over is not sent, and the last cent can still go
   await expect(answer(page)).toHaveText('Sent €0.01. You can send €0.00 more today.');
 });
 
-test('RISK-TL-INVALID: an amount that is not money is not sent, and the typed text stays to fix', async ({ page }) => {
-  await openTransferPage(page);
-  for (const typed of ['0', '-5', '12.345']) {
+// One test per typed amount, so each one passes or fails on its own.
+for (const typed of ['0', '-5', '12.345']) {
+  test(`RISK-TL-INVALID: "${typed}" is not sent, and the typed text stays to fix`, async ({ page }) => {
+    await openTransferPage(page);
     await send(page, typed);
     await expect(answer(page)).toHaveText('Not sent: enter an amount in euros, like 25.00.');
     await expect(page.getByLabel('Amount in euros')).toHaveValue(typed);
-  }
-  await expect(leftToday(page)).toHaveText('Left today: €5,000.00');
-});
+    await expect(leftToday(page)).toHaveText('Left today: €5,000.00');
+  });
+}
 
 test('RISK-TL-REMAINING: what is left today is still right after reloading the page', async ({ page }) => {
   await openTransferPage(page);
