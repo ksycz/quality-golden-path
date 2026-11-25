@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   // Generated files are never linted.
-  { ignores: ['node_modules/', 'reports/', '.stryker-tmp/'] },
+  { ignores: ['node_modules/', 'reports/', '.stryker-tmp/', 'test-results/', 'playwright-report/'] },
   // ESLint's recommended JavaScript rules, plus the recommended TypeScript rules.
   js.configs.recommended,
   ...tseslint.configs.recommended,

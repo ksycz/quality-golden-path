@@ -1,8 +1,8 @@
 // Runs every quality gate locally and prints one test-report summary.
 // Run: npm run gates
 //
-// Same gates and order as CI: Stage 1 (fast checks), then Stage 2 (mutation testing),
-// which only runs if Stage 1 passed. Each gate's own output is hidden unless it fails,
+// Same gates as CI: Stage 1 (fast checks), then Stage 2 (mutation testing) and Stage 3 (smoke tests),
+// each only if the stages before it passed. Each gate's own output is hidden unless it fails,
 // so a green run is one short table and a red run shows exactly what broke.
 
 import { spawnSync } from 'node:child_process';
@@ -44,6 +44,18 @@ const STAGES = [
         },
         // On failure, show only the surviving mutants: where they are and what the change was.
         focus: /^\[Survived\]|^src\/|^[-+] {3}|break threshold/,
+      },
+    ],
+  },
+  {
+    name: 'Stage 3 · Smoke',
+    gates: [
+      {
+        // Starts the real server and calls it, as CI does.
+        script: 'smoke',
+        label: 'Smoke tests',
+        detail: (out) => out.match(/(\d+) passed/)?.[0],
+        focus: /✘|Error:|Expected|Received/,
       },
     ],
   },
