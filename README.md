@@ -6,6 +6,8 @@ A small, public demo of a **quality golden path for teams where coding agents wr
 
 The domain is synthetic: a payment service's **daily transfer limit**. Nothing here comes from any real company, and all data is made up.
 
+**Dashboard:** https://ksycz.github.io/quality-golden-path/: the four headline metrics on synthetic data, one of them getting worse on purpose. Build it locally with `npm run dashboard`.
+
 ## What's here
 
 | Path | What it is |
