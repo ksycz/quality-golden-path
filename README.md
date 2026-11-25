@@ -48,6 +48,7 @@ npm ci      # install exactly the versions in package-lock.json
 | `npm run check:description -- body.md` | Checks a PR description against the PR template | <1 s |
 | `npm run mutation` | Mutation testing on all code; report in `reports/mutation/index.html` | ~5 s here |
 | `npm run mutation:changed` | Mutation testing only on `src/` files changed vs `origin/main`, including uncommitted and new files. This is what `gates` and CI run | varies |
+| `npm run risk-coverage` | Tier 1 Risk Coverage from a full mutation run: per risk in `risks.yml`, the mutants in the code its tests run and how many the suite catches. A risk counts at 80% or more. Not a gate; the dashboard's numbers stay synthetic | ~25 s |
 | `npm run gates` | Everything above in order, the same checks CI runs, with one PASS/FAIL/SKIP report; on failure it shows only what broke | ~10 s here |
 
 ```bash
