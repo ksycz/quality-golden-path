@@ -19,20 +19,22 @@ In the order it landed.
 | 7 | Repo setting: required check | `gate` is a required check on `main`, accepted only from GitHub Actions, so a red gate blocks the merge |
 | 8 | ci: PR size warning | Warns above 400 changed lines; above 1,000 the PR needs a `Large PR:` reason. Moves, lockfiles and reports don't count, and refactors get no automatic exception. The Guide keeps refactors and behaviour changes in separate PRs |
 | 9 | Repo settings: security | Dependabot alerts on; workflows from outside contributors wait for approval; merged branches are deleted. Already on before: read-only workflow token, secret scanning with push protection |
+| 10 | Demo PR (pull request 9) | An agent adds a €2,000 single-transfer maximum with `<` instead of `<=`, and tests that mirror the code. Every line runs and every test is green, but mutation scores 75% and `gate` blocks the merge. It stays open, labelled "do not merge" |
+| 11 | ci: local gates like CI | `npm run gates` mutates only the code changed on the branch, including files not yet committed, so the laptop gives the same answer as CI |
+| 12 | chore(deps): test tooling | Vitest 5.1.1, and patched `minimatch` and `qs` through overrides. Dependabot alerts went from 9 (3 critical) to 0 |
 
 ## Next
 
-In the order they will be built. The first three are what the demo and the deck rely on.
+In the order they will be built. The first three are what the deck still relies on.
 
 | # | Item | Why | Half of the motto |
 |---|---|---|---|
-| 1 | Demo PR with weak tests | An agent adds a €2,000 single-transfer maximum with `<` instead of `<=`, and tests that mirror the code. Every line runs and everything is green, but the mutation gate fails and `gate` blocks the merge. It stays open as the demo and is never merged | Prove it |
-| 2 | Smoke tests | A tiny HTTP service around the limit check, and a few fast Playwright checks that it starts, answers and applies the limit. Runs as Stage 3 in CI | Prove it |
-| 3 | End-to-end tests | A simple transfer page on that service, and Playwright tests of the whole customer journey: send transfers through the day, reach the limit exactly, then see the rejection and the amount left. Covers the Tier 1 risks from the customer's side | Prove it |
-| 4 | Dashboard on GitHub Pages | The four headline metrics on synthetic data, including one that is getting worse | Confirm it |
-| 5 | Scheduled synthetic check | A Playwright check against the live dashboard every few hours; a failure opens an issue | Confirm it |
-| 6 | Renovate | Dependency updates as small PRs, held for a week after release, so they go through the same gates | Prove it |
-| 7 | Agent git guardrails | A Claude Code hook that blocks force pushes, pushes to `main` and other destructive git commands | Prove it |
+| 1 | Smoke tests | A tiny HTTP service around the limit check, and a few fast Playwright checks that it starts, answers and applies the limit. Runs as Stage 3 in CI | Prove it |
+| 2 | End-to-end tests | A simple transfer page on that service, and Playwright tests of the whole customer journey: send transfers through the day, reach the limit exactly, then see the rejection and the amount left. Covers the Tier 1 risks from the customer's side | Prove it |
+| 3 | Dashboard on GitHub Pages | The four headline metrics on synthetic data, including one that is getting worse | Confirm it |
+| 4 | Scheduled synthetic check | A Playwright check against the live dashboard every few hours; a failure opens an issue | Confirm it |
+| 5 | Renovate | Dependency updates as small PRs, held for a week after release, so they go through the same gates | Prove it |
+| 6 | Agent git guardrails | A Claude Code hook that blocks force pushes, pushes to `main` and other destructive git commands | Prove it |
 
 ## Later
 
