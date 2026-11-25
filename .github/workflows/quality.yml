@@ -5,6 +5,9 @@ name: quality
 
 on:
   pull_request:
+    # "edited" re-runs the gates when the title or description changes, so fixing the title or adding
+    # a "Large PR:" reason clears the failure. Everything re-runs, because the latest run decides "gate".
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 
@@ -48,6 +51,15 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }} # passed as env, never interpolated into the script
       - name: Name guard
         run: node scripts/name-guard.mjs
+      # Warns above pr_size_warn changed lines; fails above pr_size_max unless the description says why.
+      - name: PR size
+        if: github.event_name == 'pull_request'
+        run: |
+          # Exit code 79 is a warning: shown as an annotation, and the job still passes.
+          node scripts/pr-size.mjs || { code=$?; [ "$code" = 79 ] || exit "$code"; }
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }} # passed as env, never interpolated into the script
       # gitleaks looks for tokens, keys and passwords in the changes.
       - name: Secrets scan
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
@@ -120,7 +132,7 @@ jobs:
             echo "| Stage | What it checks | Result |"
             echo "|---|---|---|"
             echo "| Changes | Which files changed, so docs-only PRs skip the heavy gates | $(badge "$CHANGES") |"
-            echo "| Cheap | PR title, name guard, secret scan | $(badge "$CHEAP") |"
+            echo "| Cheap | PR title, name guard, PR size, secret scan | $(badge "$CHEAP") |"
             echo "| Fast | Lint, types, tests, risks have tests, no real payment data | $(badge "$FAST") |"
             echo "| Evidence | Mutation score on changed code | $(badge "$EVIDENCE") |"
           } >> "$GITHUB_STEP_SUMMARY"

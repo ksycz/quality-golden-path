@@ -5,4 +5,6 @@ standard_version: 1.0.0
 gates:
   mutation_score_min: 80   # on changed code; Tier 1 standard
   risk_check: true         # every risk in risks.yml has a test naming it
+  pr_size_warn: 400        # changed lines; above this the PR gets a warning
+  pr_size_max: 1000        # above this the PR needs a "Large PR: <reason>" line in its description
 waivers: []                # e.g. { gate: mutation, reason: "...", approved_by: "...", expires: 2026-12-31 }

@@ -34,5 +34,6 @@ Done means: every gate is green locally, and every risk your change touches has 
 
 - Work on a branch; `main` accepts changes only through a PR.
 - Titles follow Conventional Commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `ci:`, `chore:`, `build:`, `perf:`.
-- Keep a PR under about 400 changed lines.
+- Keep a PR under about 400 changed lines; `npm run check:size` counts them. Over 1,000 needs a line `Large PR: <why it can't be split>` in the description.
+- Keep refactors and behaviour changes in separate PRs. A refactor leaves the tests unchanged; that is how it proves nothing changed.
 - The person who ran the agent is the PR's author and does not approve it.

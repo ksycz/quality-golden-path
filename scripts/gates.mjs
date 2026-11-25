@@ -6,7 +6,7 @@
 // so a green run is one short table and a red run shows exactly what broke.
 
 import { spawnSync } from 'node:child_process';
-import { c, SKIP_CODE } from './lib.mjs';
+import { c, SKIP_CODE, WARN_CODE } from './lib.mjs';
 
 // Each gate: the npm script to run, a readable name, and how to pull one key number from its output.
 const STAGES = [
@@ -26,6 +26,7 @@ const STAGES = [
       { script: 'check:names', label: 'Name guard' },
       { script: 'check:data', label: 'No real payment data' },
       { script: 'check:secrets', label: 'No tokens or keys (gitleaks)' },
+      { script: 'check:size', label: 'PR size', detail: (out) => out.match(/(\d+) changed lines/)?.[0] },
     ],
   },
   {
@@ -71,6 +72,13 @@ for (const stage of STAGES) {
       console.log(`  ${c.inverseAmber(' SKIP ')}  ${gate.label.padEnd(WIDTH)} ${c.dim(`${seconds.padStart(5)}s`)}  ${c.amber(output.trim().replace(/^–\s*/, ''))}`);
       continue;
     }
+    // A warning (WARN_CODE) is shown in amber with its reason; it doesn't fail the run.
+    if (run.status === WARN_CODE) {
+      results.push({ ...gate, status: 'WARN', seconds });
+      console.log(`  ${c.inverseAmber(' WARN ')}  ${gate.label.padEnd(WIDTH)} ${c.dim(`${seconds.padStart(5)}s`)}  ${c.amber(output.trim().split('\n')[0].replace(/^!\s*/, ''))}`);
+      console.log(c.dim(output.trim().split('\n').slice(1).map((line) => `      │ ${line.replace(/^ {2}/, '').trimEnd()}`).join('\n')));
+      continue;
+    }
     const ok = run.status === 0;
     const detail = gate.detail?.(output) ?? '';
     results.push({ ...gate, status: ok ? 'PASS' : 'FAIL', seconds, detail });
@@ -94,9 +102,11 @@ const total = ((Date.now() - startAll) / 1000).toFixed(1);
 const passed = results.filter((r) => r.status === 'PASS').length;
 const failed = results.filter((r) => r.status === 'FAIL');
 const skipped = results.filter((r) => r.status === 'SKIP');
+const warned = results.filter((r) => r.status === 'WARN');
 if (failed.length === 0) {
   console.log(`  ${c.green('✓')} ${c.bold(`${passed} of ${results.length} gates passed`)} ${c.dim(`in ${total}s`)}  · ready for a pull request`);
   // Say plainly what didn't run, so a skipped gate never looks like a pass.
+  if (warned.length > 0) console.log(c.amber(`    Warnings: ${warned.map((r) => r.label).join(', ')}`));
   if (skipped.length > 0) console.log(c.amber(`    Not run here: ${skipped.map((r) => r.label).join(', ')}`));
   console.log(c.dim('    Mutation report: reports/mutation/index.html\n'));
 } else {

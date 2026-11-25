@@ -2,7 +2,7 @@
 
 ## What and why
 
-<!-- One or two sentences. -->
+<!-- One or two sentences. Over 1,000 changed lines? Add a line: Large PR: <why it can't be split> -->
 
 ## Tier 1 only
 
