@@ -3,7 +3,7 @@
 **Risk Tier:** 1 (moves money)
 **Status:** accepted
 
-A customer of a (fictional) bank has a daily limit on outgoing transfers. The limit protects the customer if their account is taken over, and protects the bank from large unauthorised payouts.
+A customer of a (fictional) payment service has a daily limit on outgoing transfers. The limit protects the customer if their account is taken over, and protects the service from large unauthorised transfers.
 
 All amounts are whole **cents** (integers). There are no fractions of a cent.
 
