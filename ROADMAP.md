@@ -28,6 +28,9 @@ In the order it landed.
 | 16 | feat: transfer page | A page where a customer sends transfers and sees what is left of today's limit, on the same API |
 | 17 | test: end-to-end tests | Playwright in Chromium on the transfer page, one test per Tier 1 risk. Stage 4 in CI, with a trace and report kept when a test fails |
 | 18 | ci: PR description check | Cheap checks fail a PR whose description skips the template's sections, or whose "How to test locally" has only the default commands |
+| 19 | feat: dashboard metrics | The four headline metrics and the good-or-lucky boxes, computed from 12 weeks of synthetic data, with tests |
+| 20 | feat: dashboard page | One static page from `npm run dashboard`: 4-week trends with counts, "What isn't working", good or lucky, diagnostics |
+| 21 | ci: dashboard on GitHub Pages | Published after every merge to main that touches it: https://ksycz.github.io/quality-golden-path/ |
 
 ## Next
 
@@ -35,10 +38,9 @@ In the order they will be built. The first one is what the deck still relies on.
 
 | # | Item | Why | Half of the motto |
 |---|---|---|---|
-| 1 | Dashboard on GitHub Pages | The four headline metrics on synthetic data, including one that is getting worse | Confirm it |
-| 2 | Scheduled synthetic check | A Playwright check against the live dashboard every few hours; a failure opens an issue | Confirm it |
-| 3 | Renovate | Dependency updates as small PRs, held for a week after release, so they go through the same gates | Prove it |
-| 4 | Agent git guardrails | A Claude Code hook that blocks force pushes, pushes to `main` and other destructive git commands | Prove it |
+| 1 | Scheduled synthetic check | A Playwright check against the live dashboard every few hours; a failure opens an issue | Confirm it |
+| 2 | Renovate | Dependency updates as small PRs, held for a week after release, so they go through the same gates | Prove it |
+| 3 | Agent git guardrails | A Claude Code hook that blocks force pushes, pushes to `main` and other destructive git commands | Prove it |
 
 ## Later
 
