@@ -61,4 +61,4 @@ open reports/mutation/index.html    # see which mutants the tests killed or miss
 | `.github/rulesets/main.json` | A reviewable copy of the team ruleset for `main` |
 | `.github/name-guard.sha256` | Hashes of words that must never appear in this repo |
 
-This repo is being built in small pull requests; the README grows with each one.
+This repo is being built in small pull requests; the README grows with each one. [`ROADMAP.md`](ROADMAP.md) lists what is done, what comes next and what is left out on purpose.
