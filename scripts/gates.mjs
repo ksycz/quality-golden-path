@@ -33,13 +33,17 @@ const STAGES = [
     name: 'Stage 2 · Evidence',
     gates: [
       {
-        script: 'mutation',
+        // Changed code only, as in CI: a new file's weak tests can't hide behind the rest of the repo's score.
+        script: 'mutation:changed',
         label: 'Mutation score ≥ 80%',
         detail: (out) => {
           // Stryker's table row: "All files | 95.24 | ... | killed | timeout | survived | ..."
           const row = out.match(/All files\s*\|\s*([\d.]+)\s*\|\s*[\d.]+\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)/);
-          return row ? `${row[1]}% · ${row[2]} killed, ${row[4]} survived` : undefined;
+          if (row) return `${row[1]}% · ${row[2]} killed, ${row[4]} survived`;
+          return /No source files changed/.test(out) ? 'no source code changed' : undefined;
         },
+        // On failure, show only the surviving mutants: where they are and what the change was.
+        focus: /^\[Survived\]|^src\/|^[-+] {3}|break threshold/,
       },
     ],
   },
@@ -108,7 +112,9 @@ if (failed.length === 0) {
   // Say plainly what didn't run, so a skipped gate never looks like a pass.
   if (warned.length > 0) console.log(c.amber(`    Warnings: ${warned.map((r) => r.label).join(', ')}`));
   if (skipped.length > 0) console.log(c.amber(`    Not run here: ${skipped.map((r) => r.label).join(', ')}`));
-  console.log(c.dim('    Mutation report: reports/mutation/index.html\n'));
+  // Point to the report only when mutation testing actually ran in this run.
+  const mutated = results.some((r) => r.script === 'mutation:changed' && r.detail?.includes('%'));
+  console.log(mutated ? c.dim('    Mutation report: reports/mutation/index.html\n') : '');
 } else {
   console.log(`  ${c.red('✗')} ${c.bold(c.red(`${failed.length} failed: ${failed.map((f) => f.label).join(', ')}`))} ${c.dim(`in ${total}s`)}\n`);
   process.exitCode = 1;

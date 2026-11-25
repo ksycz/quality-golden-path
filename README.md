@@ -41,7 +41,7 @@ npm ci      # install exactly the versions in package-lock.json
 | `npm run check:size` | Counts changed lines against `origin/main`: warns above 400, fails above 1,000 unless the PR says why. Moves, lockfiles and reports don't count | <1 s |
 | `npm run check:title -- "feat: x"` | Checks a PR title against Conventional Commits | <1 s |
 | `npm run mutation` | Mutation testing on all code; report in `reports/mutation/index.html` | ~5 s here |
-| `npm run mutation:changed` | Mutation testing only on `src/` files changed vs `origin/main` | varies |
+| `npm run mutation:changed` | Mutation testing only on `src/` files changed vs `origin/main`, including uncommitted and new files. This is what `gates` and CI run | varies |
 | `npm run gates` | Everything above in order, the same checks CI runs, with one PASS/FAIL/SKIP report; on failure it shows only what broke | ~10 s here |
 
 ```bash
