@@ -21,6 +21,7 @@
     "check:risks": "node scripts/risk-check.mjs",
     "check:names": "node scripts/name-guard.mjs",
     "check:title": "node scripts/pr-title.mjs",
+    "check:description": "node scripts/pr-description.mjs",
     "gates": "node scripts/gates.mjs",
     "check:data": "node scripts/data-scan.mjs",
     "check:secrets": "node scripts/secrets-scan.mjs",
