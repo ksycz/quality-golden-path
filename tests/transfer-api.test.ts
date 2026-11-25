@@ -1,7 +1,7 @@
 // Unit tests for the HTTP API: routing, input checks and status codes.
 // The limit rules themselves are proven in transfer-limit.test.ts; here we check the API passes them through.
 import { describe, expect, it } from 'vitest';
-import { handleRequest } from '../src/transfer-api';
+import { createHandler, handleRequest } from '../src/transfer-api';
 import { eur } from './money';
 
 const post = (body: unknown) =>
@@ -60,4 +60,51 @@ describe('POST /transfers/decision', () => {
 
 it('answers 404 for an unknown path', () => {
   expect(handleRequest({ method: 'GET', path: '/nope', body: '' })).toEqual({ status: 404, body: { error: 'Not found' } });
+});
+
+describe('the transfer page API', () => {
+  // A fresh handler has its own empty day ledger.
+  const page = () => createHandler();
+  const send = (handler: ReturnType<typeof createHandler>, body: unknown) =>
+    handler({ method: 'POST', path: '/transfers', body: JSON.stringify(body) });
+
+  it('POST /transfers sends a transfer and remembers it for the customer', () => {
+    const handler = page();
+    expect(send(handler, { customer: 'ana', amount: '4000' })).toMatchObject({ status: 200, body: { status: 'approved', leftToday: '€1,000.00' } });
+    expect(handler({ method: 'GET', path: '/transfers/today', body: '', query: { customer: 'ana' } })).toEqual({
+      status: 200,
+      body: { leftToday: '€1,000.00' },
+    });
+  });
+
+  it.each`
+    case                     | body                                    | error
+    ${'missing customer'}    | ${{ amount: '5' }}                      | ${'customer must be 1 to 40 lowercase letters, digits or dashes'}
+    ${'customer with space'} | ${{ customer: 'a b', amount: '5' }}     | ${'customer must be 1 to 40 lowercase letters, digits or dashes'}
+    ${'amount as a number'}  | ${{ customer: 'ana', amount: 5 }}       | ${'amount must be text, like "25.00"'}
+    ${'JSON null'}           | ${null}                                 | ${'Body must be a JSON object'}
+  `('POST /transfers rejects a $case with 400', ({ body, error }) => {
+    expect(send(page(), body)).toEqual({ status: 400, body: { error } });
+  });
+
+  it('POST /transfers rejects a body that is not JSON', () => {
+    expect(page()({ method: 'POST', path: '/transfers', body: '{' })).toEqual({ status: 400, body: { error: 'Body must be JSON' } });
+  });
+
+  it('GET /transfers/today needs a valid customer', () => {
+    expect(page()({ method: 'GET', path: '/transfers/today', body: '' })).toMatchObject({ status: 400 });
+    expect(page()({ method: 'GET', path: '/transfers/today', body: '', query: { customer: 'A'.repeat(41) } })).toMatchObject({ status: 400 });
+  });
+
+  it('accepts a customer id of exactly 40 characters', () => {
+    expect(page()({ method: 'GET', path: '/transfers/today', body: '', query: { customer: 'a'.repeat(40) } })).toMatchObject({ status: 200 });
+  });
+
+  it.each`
+    method    | path
+    ${'GET'}  | ${'/transfers'}
+    ${'POST'} | ${'/transfers/today'}
+  `('$method $path is not allowed', ({ method, path }) => {
+    expect(page()({ method, path, body: '' })).toEqual({ status: 405, body: { error: 'Method not allowed' } });
+  });
 });
