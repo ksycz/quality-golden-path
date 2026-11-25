@@ -2,30 +2,37 @@
 
 What this repo has, what comes next, and what is left out on purpose. Each item lands as one small pull request with a Conventional Commits title, so the history reads like this list.
 
-The order follows the motto: first **prove it before release**, then **confirm it in production**.
+The plan follows the motto: first **prove it before release**, then **confirm it in production**.
 
 ## Done
 
-| Pull request | What it added |
-|---|---|
-| feat: daily transfer limit | The requirement, the risk list, `decideTransfer()` and its example and property-based tests |
-| feat: the Guide | `AGENTS.md`, `CLAUDE.md`, the writing-tests skill and the PR template |
-| ci: quality gates | Gates picked by changed files, one required `gate` check, mutation testing on changed code, name guard, payment data and secrets scans, and one readable report from `npm run gates` |
-| docs: wording | Generic payment service wording, author name |
-| Repo setting | `gate` is a required check on `main`, accepted only from GitHub Actions, so a red gate blocks the merge |
-| ci: PR size warning | Warns above 400 changed lines; above 1,000 the PR needs a `Large PR:` reason. Moves, lockfiles and reports don't count, and refactors get no automatic exception. The Guide keeps refactors and behaviour changes in separate PRs |
+In the order it landed.
+
+| # | Change | What it added |
+|---|---|---|
+| 1 | feat: daily transfer limit | The requirement, the risk list, `decideTransfer()` and its example and property-based tests |
+| 2 | feat: the Guide | `AGENTS.md`, `CLAUDE.md`, the writing-tests skill and the PR template |
+| 3 | docs: licence name | Author name in the licence |
+| 4 | ci: quality gates | Gates picked by changed files, one `gate` job, mutation testing on changed code, name guard, payment data and secrets scans, and one readable report from `npm run gates` |
+| 5 | docs: payment service wording | Generic payment service wording in the README and the requirement |
+| 6 | docs: roadmap | This file |
+| 7 | Repo setting: required check | `gate` is a required check on `main`, accepted only from GitHub Actions, so a red gate blocks the merge |
+| 8 | ci: PR size warning | Warns above 400 changed lines; above 1,000 the PR needs a `Large PR:` reason. Moves, lockfiles and reports don't count, and refactors get no automatic exception. The Guide keeps refactors and behaviour changes in separate PRs |
+| 9 | Repo settings: security | Dependabot alerts on; workflows from outside contributors wait for approval; merged branches are deleted. Already on before: read-only workflow token, secret scanning with push protection |
 
 ## Next
 
-| Item | Why | Half of the motto |
-|---|---|---|
-| Smoke tests | A tiny HTTP service around the limit check, and a few fast Playwright checks that it starts, answers and applies the limit. Runs as Stage 3 in CI | Prove it |
-| End-to-end tests | A simple transfer page on that service, and Playwright tests of the whole customer journey: send transfers through the day, reach the limit exactly, then see the rejection and the amount left. Covers the Tier 1 risks from the customer's side | Prove it |
-| Demo PR with weak tests | Tests that reach 100% coverage and still miss the limit edge. The mutation gate blocks it, which shows why coverage alone is not enough | Prove it |
-| Dashboard on GitHub Pages | The four headline metrics on synthetic data, including one that is getting worse | Confirm it |
-| Scheduled synthetic check | A Playwright check against the live dashboard every few hours; a failure opens an issue | Confirm it |
-| Renovate | Dependency updates as small PRs, held for a week after release, so they go through the same gates | Prove it |
-| Agent git guardrails | A Claude Code hook that blocks force pushes, pushes to `main` and other destructive git commands | Prove it |
+In the order they will be built. The first three are what the demo and the deck rely on.
+
+| # | Item | Why | Half of the motto |
+|---|---|---|---|
+| 1 | Demo PR with weak tests | An agent adds a €2,000 single-transfer maximum with `<` instead of `<=`, and tests that mirror the code. Every line runs and everything is green, but the mutation gate fails and `gate` blocks the merge. It stays open as the demo and is never merged | Prove it |
+| 2 | Smoke tests | A tiny HTTP service around the limit check, and a few fast Playwright checks that it starts, answers and applies the limit. Runs as Stage 3 in CI | Prove it |
+| 3 | End-to-end tests | A simple transfer page on that service, and Playwright tests of the whole customer journey: send transfers through the day, reach the limit exactly, then see the rejection and the amount left. Covers the Tier 1 risks from the customer's side | Prove it |
+| 4 | Dashboard on GitHub Pages | The four headline metrics on synthetic data, including one that is getting worse | Confirm it |
+| 5 | Scheduled synthetic check | A Playwright check against the live dashboard every few hours; a failure opens an issue | Confirm it |
+| 6 | Renovate | Dependency updates as small PRs, held for a week after release, so they go through the same gates | Prove it |
+| 7 | Agent git guardrails | A Claude Code hook that blocks force pushes, pushes to `main` and other destructive git commands | Prove it |
 
 ## Later
 
