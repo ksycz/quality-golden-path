@@ -24,12 +24,12 @@
   ],
   "teams": [
     {
-      "name": "House Atreides",
+      "name": "Fremen",
       "coveragePercent": 82,
       "escapedPer100": 0.4
     },
     {
-      "name": "House Corrino",
+      "name": "Sardaukar",
       "coveragePercent": 38,
       "escapedPer100": 0.5
     },
@@ -39,7 +39,7 @@
       "escapedPer100": 2.6
     },
     {
-      "name": "Bene Gesserit",
+      "name": "House Atreides",
       "coveragePercent": 79,
       "escapedPer100": 2.1
     }
