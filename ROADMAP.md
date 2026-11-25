@@ -31,6 +31,7 @@ In the order it landed.
 | 19 | feat: dashboard metrics | The four headline metrics and the good-or-lucky boxes, computed from 12 weeks of synthetic data, with tests |
 | 20 | feat: dashboard page | One static page from `npm run dashboard`: 4-week trends with counts, "What isn't working", good or lucky, diagnostics |
 | 21 | ci: dashboard on GitHub Pages | Published after every merge to main that touches it: https://ksycz.github.io/quality-golden-path/ |
+| 22 | feat: Risk Coverage from a real run | `npm run risk-coverage` reads `risks.yml` and the mutation report: a risk counts when the suite catches 80% or more of the mutants in the code its tests run |
 
 ## Next
 
