@@ -1,3 +1,5 @@
+// Example-based tests for the daily transfer limit.
+// Every expected value comes from requirements/daily-transfer-limit.md, never from running the code.
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_DAILY_LIMIT_CENTS, decideTransfer } from '../src/transfer-limit';
 import { eur } from './money';
@@ -7,6 +9,8 @@ import { eur } from './money';
 
 describe('REQ-TL-1, REQ-TL-2, REQ-TL-4: the examples table from the requirement', () => {
   // Default limit: 5,000.00 EUR. Same rows, same order as the requirement file.
+  // it.each with a table: every row becomes its own test, and $sentToday, $amount… in the
+  // test name are replaced by that row's values, so a failure says exactly which row broke.
   it.each`
     sentToday  | amount     | result              | leftToday
     ${0}       | ${5000}    | ${'approved'}       | ${0}

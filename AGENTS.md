@@ -11,7 +11,7 @@ Requirements live in `requirements/`. Risks live in `risks.yml`, each linked to 
 1. **Read** the requirement and the risks your change touches.
 2. **Write the tests first**, from the requirement, and watch them go **red**. Before writing or reviewing any test, read `.claude/skills/writing-tests/SKILL.md`.
 3. **Implement** until the tests go green.
-4. **Run the local gates**: the scripts in `package.json` (`typecheck`, `test`, and later `mutation`).
+4. **Run the local gates**: `npm run gates` runs everything CI runs, including mutation testing. The README's Commands table explains each step.
 5. **Open a pull request** using `.github/pull_request_template.md`.
 
 Done means: every gate is green locally, and every risk your change touches has a test whose `describe` names its risk ID and requirement ID.

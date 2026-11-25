@@ -1,0 +1,9 @@
+# The quality configuration belongs to the QA Guild.
+# In a real organisation this would be a team, e.g. @your-org/qa-tech-leads.
+/quality.yml          @ksycz
+/risks.yml            @ksycz
+/stryker.config.mjs   @ksycz
+/scripts/             @ksycz
+/.github/             @ksycz
+/AGENTS.md            @ksycz
+/CLAUDE.md            @ksycz

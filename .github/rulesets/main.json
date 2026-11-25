@@ -1,0 +1,29 @@
+{
+  "_comment": "Copy of the TEAM version of the ruleset on main, kept here so it is visible and reviewable. This file enforces nothing; GitHub does. The live demo ruleset uses 0 required approvals and no code-owner review, because a single account cannot approve its own pull request.",
+  "name": "protect-main",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [],
+  "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 1,
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": true,
+        "require_last_push_approval": true,
+        "required_review_thread_resolution": true
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": false,
+        "required_status_checks": [{ "context": "gate" }]
+      }
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+# Quality gates for every pull request and every push to main.
+# Order: work out which gates apply → cheap checks → Stage 1 (fast) → Stage 2 (mutation) → one final "gate" result.
+# Only "gate" is a required check on main, so one name covers every job that applies to the change.
+name: quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Read-only by default; no job needs to write.
+permissions:
+  contents: read
+
+# Agents push often: a new push cancels the old run.
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Decide from the changed files whether this is a code change or docs-only (scripts/changes.mjs).
+  changes:
+    name: Which gates apply
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.classify.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # Full history so the script can diff against the base branch; no git credentials left on disk.
+        with: { fetch-depth: 0, persist-credentials: false }
+      - id: classify
+        run: node scripts/changes.mjs
+        env:
+          # On a PR, compare with the target branch. On a push to main, compare with the previous commit.
+          BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD~1' }}
+
+  # Checks that cost seconds, so they run on every change, docs included.
+  cheap:
+    name: Cheap checks (every change)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - name: PR title follows Conventional Commits
+        if: github.event_name == 'pull_request'
+        run: node scripts/pr-title.mjs
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }} # passed as env, never interpolated into the script
+      - name: Name guard
+        run: node scripts/name-guard.mjs
+      # gitleaks looks for tokens, keys and passwords in the changes.
+      - name: Secrets scan
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Stage 1: everything that runs in under a minute. Skipped for docs-only changes.
+  fast:
+    name: Stage 1 · Fast
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc, cache: npm }
+      # Install exactly what package-lock.json says, without running packages' install scripts.
+      - run: npm ci --ignore-scripts
+      - run: npm run lint          # likely bugs and unused code
+      - run: npm run typecheck     # TypeScript types
+      - run: npm test              # example and property-based tests
+      - run: npm run check:risks   # every risk in risks.yml has a test naming it
+      - run: npm run check:data    # no real-looking card numbers or IBANs
+
+  # Stage 2: do the tests actually catch bugs? Only runs after Stage 1 passes.
+  evidence:
+    name: Stage 2 · Evidence (mutation)
+    needs: [changes, fast]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci --ignore-scripts
+      - name: Mutation testing on changed code (Tier 1 ≥ 80%)
+        run: npm run mutation:changed
+        env:
+          BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD~1' }}
+
+  gate:
+    name: gate
+    # The single required check. Skipped jobs count as passed; failed or cancelled ones don't.
+    needs: [changes, cheap, fast, evidence]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: All applicable gates passed
+        # Job results come in through env, never pasted into the script.
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          CHEAP: ${{ needs.cheap.result }}
+          FAST: ${{ needs.fast.result }}
+          EVIDENCE: ${{ needs.evidence.result }}
+        run: |
+          # Turn a job result into a badge for the run page.
+          badge() {
+            case "$1" in
+              success) echo "🟢 PASS" ;;
+              skipped) echo "⚪ SKIP (not needed for these files, or an earlier stage failed)" ;;
+              *)       echo "🔴 FAIL ($1)" ;;
+            esac
+          }
+          # Write a results table to the run's Summary page on GitHub.
+          {
+            echo "## Quality gates"
+            echo ""
+            echo "| Stage | What it checks | Result |"
+            echo "|---|---|---|"
+            echo "| Changes | Which files changed, so docs-only PRs skip the heavy gates | $(badge "$CHANGES") |"
+            echo "| Cheap | PR title, name guard, secret scan | $(badge "$CHEAP") |"
+            echo "| Fast | Lint, types, tests, risks have tests, no real payment data | $(badge "$FAST") |"
+            echo "| Evidence | Mutation score on changed code | $(badge "$EVIDENCE") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Fail the required check if any job failed or was cancelled; skipped is fine.
+          for result in "$CHANGES" "$CHEAP" "$FAST" "$EVIDENCE"; do
+            if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+              echo "::error::A quality gate failed. See the Summary table."
+              exit 1
+            fi
+          done
+          echo "All applicable gates passed."
