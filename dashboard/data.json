@@ -24,22 +24,22 @@
   ],
   "teams": [
     {
-      "name": "Team Aurora",
+      "name": "Clan Sandrider",
       "coveragePercent": 82,
       "escapedPer100": 0.4
     },
     {
-      "name": "Team Birch",
+      "name": "Clan Spicewind",
       "coveragePercent": 38,
       "escapedPer100": 0.5
     },
     {
-      "name": "Team Cedar",
+      "name": "Clan Deep Desert",
       "coveragePercent": 41,
       "escapedPer100": 2.6
     },
     {
-      "name": "Team Dune",
+      "name": "Clan Stillwater",
       "coveragePercent": 79,
       "escapedPer100": 2.1
     }
