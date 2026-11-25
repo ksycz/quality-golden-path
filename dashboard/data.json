@@ -1,0 +1,51 @@
+{
+  "note": "Synthetic data for the demo. It describes no real company, team or person.",
+  "scope": "All Tier 1 services",
+  "events": [
+    {"week": "2026-11-02", "label": "Mutation gate on for Tier 1"}
+  ],
+  "bars": {
+    "coveragePercent": 70,
+    "escapedPer100": 1
+  },
+  "weeks": [
+    {"week": "2026-09-07", "releases": 38, "failedReleases": 6, "tier1Escaped": 2, "feedbackMinutes": 9, "risksListed": 40, "risksCovered": 14, "diagnostics": {"mutationScore": 61, "flakyRate": 2.1, "pipelineMinutes": 7, "ciCostPerMergeEur": 0.41, "openWaivers": 0}},
+    {"week": "2026-09-14", "releases": 41, "failedReleases": 6, "tier1Escaped": 1, "feedbackMinutes": 9, "risksListed": 40, "risksCovered": 15, "diagnostics": {"mutationScore": 62, "flakyRate": 2, "pipelineMinutes": 7, "ciCostPerMergeEur": 0.4, "openWaivers": 0}},
+    {"week": "2026-09-21", "releases": 40, "failedReleases": 5, "tier1Escaped": 2, "feedbackMinutes": 8, "risksListed": 40, "risksCovered": 16, "diagnostics": {"mutationScore": 62, "flakyRate": 2.3, "pipelineMinutes": 6, "ciCostPerMergeEur": 0.38, "openWaivers": 0}},
+    {"week": "2026-09-28", "releases": 43, "failedReleases": 6, "tier1Escaped": 1, "feedbackMinutes": 9, "risksListed": 40, "risksCovered": 17, "diagnostics": {"mutationScore": 64, "flakyRate": 1.9, "pipelineMinutes": 7, "ciCostPerMergeEur": 0.42, "openWaivers": 0}},
+    {"week": "2026-10-05", "releases": 44, "failedReleases": 5, "tier1Escaped": 1, "feedbackMinutes": 9, "risksListed": 40, "risksCovered": 18, "diagnostics": {"mutationScore": 65, "flakyRate": 2.2, "pipelineMinutes": 7, "ciCostPerMergeEur": 0.41, "openWaivers": 0}},
+    {"week": "2026-10-12", "releases": 46, "failedReleases": 5, "tier1Escaped": 1, "feedbackMinutes": 8, "risksListed": 40, "risksCovered": 20, "diagnostics": {"mutationScore": 66, "flakyRate": 2, "pipelineMinutes": 6, "ciCostPerMergeEur": 0.39, "openWaivers": 0}},
+    {"week": "2026-10-19", "releases": 45, "failedReleases": 4, "tier1Escaped": 1, "feedbackMinutes": 9, "risksListed": 40, "risksCovered": 21, "diagnostics": {"mutationScore": 68, "flakyRate": 1.8, "pipelineMinutes": 7, "ciCostPerMergeEur": 0.42, "openWaivers": 0}},
+    {"week": "2026-10-26", "releases": 47, "failedReleases": 4, "tier1Escaped": 0, "feedbackMinutes": 8, "risksListed": 40, "risksCovered": 22, "diagnostics": {"mutationScore": 70, "flakyRate": 1.9, "pipelineMinutes": 6, "ciCostPerMergeEur": 0.4, "openWaivers": 0}},
+    {"week": "2026-11-02", "releases": 48, "failedReleases": 4, "tier1Escaped": 1, "feedbackMinutes": 13, "risksListed": 40, "risksCovered": 26, "diagnostics": {"mutationScore": 78, "flakyRate": 2.4, "pipelineMinutes": 11, "ciCostPerMergeEur": 0.88, "openWaivers": 3}},
+    {"week": "2026-11-09", "releases": 50, "failedReleases": 4, "tier1Escaped": 0, "feedbackMinutes": 14, "risksListed": 40, "risksCovered": 28, "diagnostics": {"mutationScore": 81, "flakyRate": 2.6, "pipelineMinutes": 12, "ciCostPerMergeEur": 0.95, "openWaivers": 2}},
+    {"week": "2026-11-16", "releases": 49, "failedReleases": 3, "tier1Escaped": 0, "feedbackMinutes": 14, "risksListed": 40, "risksCovered": 30, "diagnostics": {"mutationScore": 83, "flakyRate": 2.2, "pipelineMinutes": 12, "ciCostPerMergeEur": 0.93, "openWaivers": 2}},
+    {"week": "2026-11-23", "releases": 52, "failedReleases": 4, "tier1Escaped": 1, "feedbackMinutes": 13, "risksListed": 40, "risksCovered": 31, "diagnostics": {"mutationScore": 84, "flakyRate": 2, "pipelineMinutes": 11, "ciCostPerMergeEur": 0.9, "openWaivers": 1}}
+  ],
+  "teams": [
+    {
+      "name": "Team Aurora",
+      "coveragePercent": 82,
+      "escapedPer100": 0.4
+    },
+    {
+      "name": "Team Birch",
+      "coveragePercent": 38,
+      "escapedPer100": 0.5
+    },
+    {
+      "name": "Team Cedar",
+      "coveragePercent": 41,
+      "escapedPer100": 2.6
+    },
+    {
+      "name": "Team Dune",
+      "coveragePercent": 79,
+      "escapedPer100": 2.1
+    }
+  ],
+  "whatIsntWorking": [
+    "Feedback time went from about 8.5 to 13.5 minutes after the mutation gate started on 2 November. Pipeline duration and CI cost per merge show why: mutation testing now runs on every Tier 1 pull request.",
+    "Next: run mutation only on changed Tier 1 files, beside the smoke tests instead of after them. We check again after 4 weeks."
+  ]
+}
