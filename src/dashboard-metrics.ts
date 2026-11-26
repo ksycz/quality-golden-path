@@ -11,7 +11,7 @@ export interface Week {
   failedReleases: number;
   /** Bugs in money and identity flows found in production. */
   tier1Escaped: number;
-  /** Median minutes from PR opened to evidence ready. */
+  /** Median minutes from PR marked ready for review to evidence ready; draft time doesn't count. */
   feedbackMinutes: number;
   /** Listed Tier 1 risks, and how many have a test that kills its mutants. */
   risksListed: number;
