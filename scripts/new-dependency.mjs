@@ -4,7 +4,9 @@
 // Code models suggest packages that don't exist, and attackers register those names ("slopsquatting").
 // A package that isn't on npm fails here at once. One that is on npm still needs a person: the PR
 // description must have a line "New dependency: <name>: <why it is needed>" for each package added,
-// and package.json is owned by the QA Guild in CODEOWNERS. Version changes and removals are not new.
+// and the reviewer decides whether it is needed. In a team setup, CODEOWNERS would send package.json
+// to the team and Security, not QA; this single-account demo doesn't list it. Version changes and
+// removals are not new.
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
