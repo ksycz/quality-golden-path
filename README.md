@@ -14,15 +14,21 @@ The domain is synthetic: a payment service's **daily transfer limit**. Nothing h
 
 1. **The merge panel:** every test passes and every new line runs, yet `gate · can this PR merge?` is required and red.
 2. **The run's Summary page:** mutation testing on the changed code scores 75% against a bar of 80%, and lists the surviving mutants. The one on line 13 (`<` changed to `<=`) is the real bug: a transfer of exactly €2,000.00 is rejected.
-3. **Try the fix yourself** in a copy, so pull request 9 stays red:
+3. **Try the fix yourself.** You work in a separate folder, so pull request 9 stays red for the next reader. You need Git, Node 22 (see `.nvmrc`) and a coding agent, such as Claude Code.
+
+   Put the PR's code in its own folder and see the gate fail:
 
    ```bash
-   git fetch origin
+   git clone https://github.com/ksycz/quality-golden-path.git
+   cd quality-golden-path
    git worktree add ../demo-fix origin/feat/single-transfer-max
    cd ../demo-fix && npm ci
+   npm run gates        # red: mutation 75.00%, 9 killed, 3 survived
    ```
 
-   Ask your coding agent: *"Fix the failing gate, follow AGENTS.md."* The Guide sends it to the requirement's examples, so it should test €2,000.00 and €2,000.01, watch the first one fail, and change `<` to `<=`. `npm run gates` tells you whether it did.
+   Start your coding agent in `demo-fix` (for Claude Code, run `claude`) and give it one sentence: *"Fix the failing gate, follow AGENTS.md."* The Guide sends it to the requirement, so it should add tests for €2,000.00 (allowed) and €2,000.01 (rejected), see the first one fail, and change `<` to `<=` on line 13.
+
+   Check its work with `npm run gates`: you want "13 of 13 gates passed" and mutation 100%. When you're done, remove the copy: `cd ../quality-golden-path && git worktree remove --force ../demo-fix`.
 
 ## How this maps to the strategy
 
