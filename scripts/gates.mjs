@@ -28,6 +28,8 @@ const STAGES = [
       { script: 'check:data', label: 'No real payment data' },
       { script: 'check:secrets', label: 'No tokens or keys (gitleaks)' },
       { script: 'check:size', label: 'PR size', detail: RESULT.size },
+      { script: 'check:tests', label: 'No tests removed or skipped' },
+      { script: 'check:deps', label: 'New packages exist on npm' },
     ],
   },
   {
