@@ -29,7 +29,7 @@ The domain is synthetic: a payment service's **daily transfer limit**. Nothing h
 | Idea | In this repo |
 |---|---|
 | **Guide**: what agents read | `AGENTS.md`, `CLAUDE.md` and `.claude/skills/writing-tests/` |
-| **Gate**: what CI enforces | `.github/workflows/quality.yml`, configured by `quality.yml`, with one required check, `gate` |
+| **Gate**: what CI enforces | `.github/workflows/quality.yml`, with thresholds from `quality.yml` and one required check, `gate` |
 | **Golden Path**: where a team starts | The repo as a whole: clone it, and the Guide and the Gates already work |
 | **Risk Tier 1**: money, identity, access | Declared in `quality.yml`; the risks are listed in `risks.yml` |
 | **Risk Coverage**: are the listed risks protected by tests that catch mutants? | `npm run risk-coverage` |
@@ -103,9 +103,9 @@ Stages 2 to 4 run in parallel after Stage 1. A full run takes about a minute.
 
 | Path | What it is |
 |---|---|
-| `quality.yml` | Declares the Risk Tier and gate thresholds; owned by the QA Guild |
+| `quality.yml` | The Risk Tier, plus the mutation bar and PR size limits the gates read; owned by the QA Guild |
 | `scripts/` | The gate scripts, each with a header saying what it checks |
-| `stryker.config.mjs` | Mutation testing settings, including the 80% threshold |
+| `stryker.config.mjs` | Mutation testing settings; the 80% bar comes from `quality.yml` |
 | `.github/CODEOWNERS` | Who must approve changes to the quality configuration |
 | `.github/rulesets/main.json` | A reviewable copy of the team ruleset for `main` |
 | `.github/name-guard.sha256` | Hashes of words that must never appear in this repo |
@@ -114,6 +114,6 @@ Stages 2 to 4 run in parallel after Stage 1. A full run takes about a minute.
 
 **Built and running:** the Guide, every gate above, branch protection on `main`, the demo PR, the transfer page and its API, the dashboard and Risk Coverage from a real mutation run.
 
-**Described in the strategy, not built here:** the same Playwright journeys running against production on a schedule, with results in Prometheus and alerts in Grafana; nightly runs (here `npm run risk-coverage` runs by hand); the AI Advisor; canary releases; contract tests; tiering per change. The dashboard's numbers are synthetic.
+**Described in the strategy, not built here:** the same Playwright journeys running against production on a schedule, with results and alerts in the team's existing monitoring; switching gates on by Risk Tier (this repo has one Tier 1 service, so every gate runs); nightly runs (here `npm run risk-coverage` runs by hand); the AI Advisor; canary releases; contract tests; tiering per change. The dashboard's numbers are synthetic.
 
 [`ROADMAP.md`](ROADMAP.md) lists what is done, what comes next and what is left out on purpose.

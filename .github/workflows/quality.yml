@@ -244,7 +244,7 @@ jobs:
             echo "| Stage | What it checks | Result | Detail |"
             echo "|---|---|---|---|"
             echo "| Which gates apply | Code or docs-only, from the changed files (never the PR title) | $(badge "$CHANGES") | $([ "$CODE" = "true" ] && echo "code change: every gate runs" || echo "docs only: heavy gates skipped") |"
-            echo "| Cheap checks | PR title, name guard, PR size, secret scan | $(badge "$CHEAP") | |"
+            echo "| Cheap checks | PR title and description, name guard, PR size, secret scan | $(badge "$CHEAP") | |"
             echo "| Stage 1 · Fast | Lint, types, tests, every risk has a test, no real payment data | $(badge "$FAST") | ${TESTS:+tests $TESTS}${RISKS:+ · $RISKS} |"
             echo "| Stage 2 · Evidence | Mutation score on changed code, 80% needed | $(badge "$EVIDENCE") | $MUTATION |"
             echo "| Stage 3 · Smoke | The real service starts and answers | $(badge "$SMOKE") | ${SMOKE_TESTS} |"

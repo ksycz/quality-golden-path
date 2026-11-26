@@ -1,5 +1,7 @@
 # Quality configuration for this service. Owned by the QA Guild (see CODEOWNERS).
-# The CI workflow reads this file to decide which gates run and how strict they are.
+# The gates read their thresholds from here: mutation_score_min (stryker.config.mjs) and the PR size limits
+# (scripts/pr-size.mjs). tier, risk_check and waivers are declared for the Guild to review; this demo has one
+# Tier 1 service, so every gate always runs. Switching gates on by tier is part of the strategy, not built here.
 tier: 1
 standard_version: 1.0.0
 gates:

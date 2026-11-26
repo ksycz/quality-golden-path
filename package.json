@@ -2,7 +2,7 @@
   "name": "quality-golden-path",
   "version": "0.1.0",
   "private": true,
-  "description": "Demo of a quality golden path when coding agents write the code. Synthetic domain.",
+  "description": "Demo: quality standards for teams where coding agents write the code. Synthetic payment service, made-up data.",
   "license": "MIT",
   "type": "module",
   "engines": {

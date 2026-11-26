@@ -31,7 +31,10 @@ In the order it landed.
 | 19 | feat: dashboard metrics | The four headline metrics and the good-or-lucky boxes, computed from 12 weeks of synthetic data, with tests |
 | 20 | feat: dashboard page | One static page from `npm run dashboard`: 4-week trends with counts, "What isn't working", good or lucky, diagnostics |
 | 21 | ci: dashboard on GitHub Pages | Published after every merge to main that touches it: https://ksycz.github.io/quality-golden-path/ |
-| 22 | feat: Risk Coverage from a real run | `npm run risk-coverage` reads `risks.yml` and the mutation report: a risk counts when the suite catches 80% or more of the mutants in the code its tests run |
+| 22 | feat: dashboard metrics as JSON | `npm run dashboard` also writes `metrics.json`, the page's numbers for other tools, computed by the same functions |
+| 23 | feat: Risk Coverage from a real run | `npm run risk-coverage` reads `risks.yml` and the mutation report: a risk counts when the suite catches 80% or more of the mutants in the code its tests run |
+| 24 | docs: README starts with the demo | The README opens with pull request 9 and says what is built and what is only described |
+| 25 | fix: quality config and docs | The mutation bar is read from `quality.yml`; synthetic teams are named "Team …"; docs match the strategy |
 
 ## Next
 
@@ -58,4 +61,4 @@ Ideas worth doing once the above is in place. Each needs more than this repo has
 ## Not planned
 
 - **Code coverage as a gate.** Coverage shows what ran, not what was checked. Mutation score is the gate instead.
-- **An AI reviewer that approves or merges on its own.** A person stays the approver for every change.
+- **An AI reviewer that approves or merges on its own.** A person approves every Tier 1 change, as here. Auto-merge, where the strategy allows it, rests on deterministic gates and service health, never on an AI verdict.
