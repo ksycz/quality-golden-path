@@ -24,22 +24,22 @@
   ],
   "teams": [
     {
-      "name": "Fremen",
+      "name": "Team Fremen",
       "coveragePercent": 82,
       "escapedPer100": 0.4
     },
     {
-      "name": "Sardaukar",
+      "name": "Team Sardaukar",
       "coveragePercent": 38,
       "escapedPer100": 0.5
     },
     {
-      "name": "House Harkonnen",
+      "name": "Team Harkonnen",
       "coveragePercent": 41,
       "escapedPer100": 2.6
     },
     {
-      "name": "House Atreides",
+      "name": "Team Atreides",
       "coveragePercent": 79,
       "escapedPer100": 2.1
     }

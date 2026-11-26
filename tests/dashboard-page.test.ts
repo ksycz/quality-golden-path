@@ -30,8 +30,8 @@ describe('the dashboard page', () => {
   });
 
   it('labels every team on the good or lucky chart, with its box in the hover text', () => {
-    expect(page).toContain('Fremen: Risk Coverage 82%, 0.4 escaped per 100 releases (Good)');
-    expect(page).toContain('House Atreides: Risk Coverage 79%, 2.1 escaped per 100 releases (Wrong risks)');
+    expect(page).toContain('Team Fremen: Risk Coverage 82%, 0.4 escaped per 100 releases (Good)');
+    expect(page).toContain('Team Atreides: Risk Coverage 79%, 2.1 escaped per 100 releases (Wrong risks)');
   });
 
   it('plots 4-week windows, so the last point of each chart is the number above it', () => {

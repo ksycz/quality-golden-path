@@ -33,7 +33,7 @@ describe('the metrics export', () => {
 
   it('puts each team in its box by the same rule as the page', () => {
     expect(metrics.teams.map((t) => [t.name, t.box])).toEqual([
-      ['Fremen', 'Good'], ['Sardaukar', 'Lucky'], ['House Harkonnen', 'Exposed'], ['House Atreides', 'Wrong risks'],
+      ['Team Fremen', 'Good'], ['Team Sardaukar', 'Lucky'], ['Team Harkonnen', 'Exposed'], ['Team Atreides', 'Wrong risks'],
     ]);
   });
 
