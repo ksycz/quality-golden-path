@@ -66,7 +66,7 @@ export function headlines(weeks: Week[]): Headline[] {
       counts: `${sum(last, (w) => w.tier1Escaped)} defects in ${releases} releases`,
     },
     {
-      tag: 'Speed', name: 'Feedback time', what: 'Median time from PR opened to evidence ready',
+      tag: 'Speed', name: 'Feedback time', what: 'Median time from PR ready for review to evidence ready',
       unit: (v) => `${fixed(v, 1)} min`, trend: feedbackTime(weeks), rolling: roll(feedbackTime),
       counts: 'average of the weekly medians',
     },
