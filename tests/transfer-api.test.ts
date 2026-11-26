@@ -91,9 +91,17 @@ describe('the transfer page API', () => {
     expect(page()({ method: 'POST', path: '/transfers', body: '{' })).toEqual({ status: 400, body: { error: 'Body must be JSON' } });
   });
 
-  it('GET /transfers/today needs a valid customer', () => {
-    expect(page()({ method: 'GET', path: '/transfers/today', body: '' })).toMatchObject({ status: 400 });
-    expect(page()({ method: 'GET', path: '/transfers/today', body: '', query: { customer: 'A'.repeat(41) } })).toMatchObject({ status: 400 });
+  // One reason to fail per row: a 41-character id in capitals would be rejected for the capitals alone.
+  it.each`
+    case                             | query
+    ${'no customer'}                 | ${undefined}
+    ${'an id of 41 characters'}      | ${{ customer: 'a'.repeat(41) }}
+    ${'an id with capital letters'}  | ${{ customer: 'Ana' }}
+  `('GET /transfers/today rejects $case with 400', ({ query }) => {
+    expect(page()({ method: 'GET', path: '/transfers/today', body: '', query })).toEqual({
+      status: 400,
+      body: { error: 'customer must be 1 to 40 lowercase letters, digits or dashes' },
+    });
   });
 
   it('accepts a customer id of exactly 40 characters', () => {

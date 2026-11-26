@@ -26,6 +26,8 @@
     "check:data": "node scripts/data-scan.mjs",
     "check:secrets": "node scripts/secrets-scan.mjs",
     "check:size": "node scripts/pr-size.mjs",
+    "check:tests": "node scripts/test-guard.mjs",
+    "check:deps": "node scripts/new-dependency.mjs",
     "dashboard": "node dashboard/build.ts",
     "risk-coverage": "stryker run && node dashboard/risk-coverage.ts"
   },

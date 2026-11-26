@@ -51,7 +51,7 @@ jobs:
 
   # Checks that cost seconds, so they run on every change, docs included.
   cheap:
-    name: "Cheap checks · PR title and description, names, size, secrets"
+    name: "Cheap checks · PR title and description, names, size, tests kept, new packages, secrets"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -75,6 +75,23 @@ jobs:
         run: |
           # Exit code 79 is a warning: shown as an annotation, and the job still passes.
           node scripts/pr-size.mjs || { code=$?; [ "$code" = 79 ] || exit "$code"; }
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }} # passed as env, never interpolated into the script
+      # Fails when tests or assertions are removed, or a test is skipped, unless the description names
+      # who approved it. Mutation testing only runs on changed source files, so it never sees a tests-only PR.
+      - name: No tests removed or skipped
+        if: github.event_name == 'pull_request'
+        run: |
+          # Exit code 79 is a warning: an approved removal, quoted in the log, and the job still passes.
+          node scripts/test-guard.mjs || { code=$?; [ "$code" = 79 ] || exit "$code"; }
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }} # passed as env, never interpolated into the script
+      # Every package the PR adds must exist on npm and be named in the description with a reason.
+      - name: New packages exist on npm and are named
+        if: github.event_name == 'pull_request'
+        run: node scripts/new-dependency.mjs
         env:
           BASE_REF: origin/${{ github.base_ref }}
           PR_BODY: ${{ github.event.pull_request.body }} # passed as env, never interpolated into the script
@@ -244,7 +261,7 @@ jobs:
             echo "| Stage | What it checks | Result | Detail |"
             echo "|---|---|---|---|"
             echo "| Which gates apply | Code or docs-only, from the changed files (never the PR title) | $(badge "$CHANGES") | $([ "$CODE" = "true" ] && echo "code change: every gate runs" || echo "docs only: heavy gates skipped") |"
-            echo "| Cheap checks | PR title and description, name guard, PR size, secret scan | $(badge "$CHEAP") | |"
+            echo "| Cheap checks | PR title and description, name guard, PR size, no tests removed, new packages exist and are named, secret scan | $(badge "$CHEAP") | |"
             echo "| Stage 1 · Fast | Lint, types, tests, every risk has a test, no real payment data | $(badge "$FAST") | ${TESTS:+tests $TESTS}${RISKS:+ · $RISKS} |"
             echo "| Stage 2 · Evidence | Mutation score on changed code, 80% needed | $(badge "$EVIDENCE") | $MUTATION |"
             echo "| Stage 3 · Smoke | The real service starts and answers | $(badge "$SMOKE") | ${SMOKE_TESTS} |"

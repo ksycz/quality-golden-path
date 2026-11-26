@@ -73,6 +73,8 @@ npm ci      # install exactly the versions in package-lock.json
 | `npm run check:data` | Fails on real-looking card numbers or IBANs | <1 s |
 | `npm run check:secrets` | Runs gitleaks for tokens, keys and passwords before you push. Shows SKIP if gitleaks isn't installed (`brew install gitleaks`); CI always scans | <1 s |
 | `npm run check:size` | Counts changed lines against `origin/main`: warns above 400, fails above 1,000 unless the PR says why. Moves, lockfiles and reports don't count | <1 s |
+| `npm run check:tests` | Compares tests, `expect()` assertions and skipped tests with `origin/main`: fewer tests or assertions, or more skips, fail in CI unless the PR names who approved it | <1 s |
+| `npm run check:deps` | Every package added to `package.json` must exist on npm and be named in the PR with a reason | ~1 s |
 | `npm run check:title -- "feat: x"` | Checks a PR title against Conventional Commits | <1 s |
 | `npm run check:description -- body.md` | Checks a PR description against the PR template | <1 s |
 | `npm run mutation` | Mutation testing on all code; report in `reports/mutation/index.html` | ~5 s here |

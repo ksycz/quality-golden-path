@@ -35,6 +35,7 @@ In the order it landed.
 | 23 | feat: Risk Coverage from a real run | `npm run risk-coverage` reads `risks.yml` and the mutation report: a risk counts when the suite catches 80% or more of the mutants in the code its tests run |
 | 24 | docs: README starts with the demo | The README opens with pull request 9 and says what is built and what is only described |
 | 25 | fix: quality config and docs | The mutation bar is read from `quality.yml`; synthetic teams are named "Team …"; docs match the strategy |
+| 26 | ci: guard removed tests and new packages | Cheap checks fail a PR that removes or skips tests without a named approver, or adds a package that isn't on npm or isn't named with a reason. A boundary property test and a one-reason customer-id test |
 
 ## Next
 
