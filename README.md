@@ -28,7 +28,7 @@ The domain is synthetic: a payment service's **daily transfer limit**. Nothing h
 
    Start your coding agent in `demo-fix` (for Claude Code, run `claude`) and give it one sentence: *"Fix the failing gate, follow AGENTS.md."* The Guide sends it to the requirement, so it should add tests for €2,000.00 (allowed) and €2,000.01 (rejected), see the first one fail, and change `<` to `<=` on line 13.
 
-   Check its work with `npm run gates`: you want "13 of 13 gates passed" and mutation 100%. When you're done, remove the copy: `cd ../quality-golden-path && git worktree remove --force ../demo-fix`.
+   Check its work with `npm run gates`: you want "13 of 13 gates passed", with mutation at 80% or above. Keep the fix local: don't push it, so pull request 9 stays red for the next reader. When you're done, remove the copy: `cd ../quality-golden-path && git worktree remove --force ../demo-fix`.
 
 ## How this maps to the strategy
 
