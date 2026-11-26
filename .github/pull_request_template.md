@@ -21,7 +21,7 @@ npm run gates   # run every gate CI runs, including mutation testing
 
 ## Checklist
 
-- [ ] No test was removed or weakened (or a human approved it, named here: …)
-- [ ] New dependencies listed with a reason (or none)
+- [ ] No test was removed or weakened (or a human approved it, in a line `Test removed: <what and why>, approved by <name>`)
+- [ ] New dependencies named with a reason, one line each: `New dependency: <name>: <why it is needed>` (or none)
 - [ ] Only synthetic data, no secrets
 - [ ] Agent-written: yes / no, and who ran it

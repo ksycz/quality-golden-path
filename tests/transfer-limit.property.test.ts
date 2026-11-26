@@ -24,6 +24,19 @@ describe('rules that hold for any amounts', () => {
     );
   });
 
+  // Random amounts almost never add up to exactly the limit, so the rule above rarely meets its boundary.
+  // This one builds the boundary on purpose: send exactly what is left, then one cent more.
+  it('RISK-TL-BOUNDARY · REQ-TL-1/2: exactly what is left today is approved, and one cent more is rejected', () => {
+    fc.assert(
+      fc.property(anyCents, anyAmount, (sentTodayCents, leftCents) => {
+        const dailyLimitCents = sentTodayCents + leftCents;
+
+        expect(decideTransfer({ amountCents: leftCents, sentTodayCents, dailyLimitCents }).status).toBe('approved');
+        expect(decideTransfer({ amountCents: leftCents + 1, sentTodayCents, dailyLimitCents }).status).toBe('rejected');
+      }),
+    );
+  });
+
   it('RISK-TL-PARTIAL · REQ-TL-2/4: what is left goes down by exactly the amount sent, or not at all if rejected', () => {
     fc.assert(
       fc.property(anyAmount, anyCents, anyCents, (amountCents, sentTodayCents, dailyLimitCents) => {

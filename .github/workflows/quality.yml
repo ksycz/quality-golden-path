@@ -1,5 +1,5 @@
 # Quality gates for every pull request and every push to main.
-# Order: work out which gates apply → cheap checks → Stage 1 (fast) → Stage 2 (mutation) and Stage 3 (smoke) side by side
+# Order: work out which gates apply → cheap checks → Stage 1 (fast) → Stages 2 (mutation), 3 (smoke) and 4 (e2e) side by side
 # → one final "gate" result.
 # Only "gate" is a required check on main, so one name covers every job that applies to the change.
 name: Quality gates
@@ -11,8 +11,8 @@ run-name: >-
 
 on:
   pull_request:
-    # "edited" re-runs the gates when the title or description changes, so fixing the title or adding
-    # a "Large PR:" reason clears the failure. Everything re-runs, because the latest run decides "gate".
+    # "edited" re-runs the gates when the title or description changes, so fixing the title, the
+    # description or adding a "Large PR:" reason clears the failure. Everything re-runs, because the latest run decides "gate".
     types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
@@ -51,7 +51,7 @@ jobs:
 
   # Checks that cost seconds, so they run on every change, docs included.
   cheap:
-    name: "Cheap checks · PR title, names, size, secrets"
+    name: "Cheap checks · PR title and description, names, size, tests kept, new packages, secrets"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -61,6 +61,12 @@ jobs:
         run: node scripts/pr-title.mjs
         env:
           PR_TITLE: ${{ github.event.pull_request.title }} # passed as env, never interpolated into the script
+      # The description follows the PR template, and "How to test locally" has this change's own steps.
+      - name: PR description follows the template
+        if: github.event_name == 'pull_request'
+        run: node scripts/pr-description.mjs
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }} # passed as env, never interpolated into the script
       - name: Name guard
         run: node scripts/name-guard.mjs
       # Warns above pr_size_warn changed lines; fails above pr_size_max unless the description says why.
@@ -69,6 +75,23 @@ jobs:
         run: |
           # Exit code 79 is a warning: shown as an annotation, and the job still passes.
           node scripts/pr-size.mjs || { code=$?; [ "$code" = 79 ] || exit "$code"; }
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }} # passed as env, never interpolated into the script
+      # Fails when tests or assertions are removed, or a test is skipped, unless the description names
+      # who approved it. Mutation testing only runs on changed source files, so it never sees a tests-only PR.
+      - name: No tests removed or skipped
+        if: github.event_name == 'pull_request'
+        run: |
+          # Exit code 79 is a warning: an approved removal, quoted in the log, and the job still passes.
+          node scripts/test-guard.mjs || { code=$?; [ "$code" = 79 ] || exit "$code"; }
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }} # passed as env, never interpolated into the script
+      # Every package the PR adds must exist on npm and be named in the description with a reason.
+      - name: New packages exist on npm and are named
+        if: github.event_name == 'pull_request'
+        run: node scripts/new-dependency.mjs
         env:
           BASE_REF: origin/${{ github.base_ref }}
           PR_BODY: ${{ github.event.pull_request.body }} # passed as env, never interpolated into the script
@@ -161,12 +184,49 @@ jobs:
         if: always()
         run: node scripts/ci-summary.mjs smoke "$RUNNER_TEMP/smoke.log"
 
+  # Stage 4: a real browser on the transfer page, a customer's day for each Tier 1 risk.
+  # Runs beside Stages 2 and 3, so it adds the browser download, not a wait.
+  e2e:
+    name: "Stage 4 · End to end · a customer's day on the transfer page"
+    outputs:
+      e2e: ${{ steps.summary.outputs.e2e }}
+    needs: [changes, fast]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc, cache: npm }
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts
+      # The Chromium build that matches the Playwright version in package-lock.json, and the system libraries it needs.
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end tests · Playwright in Chromium
+        run: npm run e2e 2>&1 | tee "$RUNNER_TEMP/e2e.log"
+      # When a test fails, keep the HTML report and each failed test's trace for 14 days.
+      # Download it from the run's Artifacts, then: npx playwright show-report <folder>
+      - name: Keep the report and traces of failed tests
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-report-and-traces
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+      - id: summary
+        name: Write results to the Summary page
+        if: always()
+        run: node scripts/ci-summary.mjs e2e "$RUNNER_TEMP/e2e.log"
+
   gate:
     # The single required check. GitHub requires it by this exact name (ruleset on main and
     # .github/rulesets/main.json), so renaming it means changing the ruleset in the same step.
     # Skipped jobs count as passed; failed or cancelled ones don't.
     name: "gate · can this PR merge?"
-    needs: [changes, cheap, fast, evidence, smoke]
+    needs: [changes, cheap, fast, evidence, smoke, e2e]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -179,10 +239,12 @@ jobs:
           FAST: ${{ needs.fast.result }}
           EVIDENCE: ${{ needs.evidence.result }}
           SMOKE: ${{ needs.smoke.result }}
+          E2E: ${{ needs.e2e.result }}
           TESTS: ${{ needs.fast.outputs.tests }}
           RISKS: ${{ needs.fast.outputs.risks }}
           MUTATION: ${{ needs.evidence.outputs.mutation }}
           SMOKE_TESTS: ${{ needs.smoke.outputs.smoke }}
+          E2E_TESTS: ${{ needs.e2e.outputs.e2e }}
         run: |
           # Turn a job result into a badge for the run page, and say why a stage didn't run.
           badge() {
@@ -199,15 +261,16 @@ jobs:
             echo "| Stage | What it checks | Result | Detail |"
             echo "|---|---|---|---|"
             echo "| Which gates apply | Code or docs-only, from the changed files (never the PR title) | $(badge "$CHANGES") | $([ "$CODE" = "true" ] && echo "code change: every gate runs" || echo "docs only: heavy gates skipped") |"
-            echo "| Cheap checks | PR title, name guard, PR size, secret scan | $(badge "$CHEAP") | |"
+            echo "| Cheap checks | PR title and description, name guard, PR size, no tests removed, new packages exist and are named, secret scan | $(badge "$CHEAP") | |"
             echo "| Stage 1 · Fast | Lint, types, tests, every risk has a test, no real payment data | $(badge "$FAST") | ${TESTS:+tests $TESTS}${RISKS:+ · $RISKS} |"
             echo "| Stage 2 · Evidence | Mutation score on changed code, 80% needed | $(badge "$EVIDENCE") | $MUTATION |"
             echo "| Stage 3 · Smoke | The real service starts and answers | $(badge "$SMOKE") | ${SMOKE_TESTS} |"
+            echo "| Stage 4 · End to end | A customer's day on the transfer page, in Chromium | $(badge "$E2E") | ${E2E_TESTS} |"
             echo ""
-            echo "Each stage's own section below has the detail: surviving mutants, and each smoke test."
+            echo "Each stage's own section below has the detail: surviving mutants, and each Playwright test."
           } >> "$GITHUB_STEP_SUMMARY"
           # Fail the required check if any job failed or was cancelled; skipped is fine.
-          for result in "$CHANGES" "$CHEAP" "$FAST" "$EVIDENCE" "$SMOKE"; do
+          for result in "$CHANGES" "$CHEAP" "$FAST" "$EVIDENCE" "$SMOKE" "$E2E"; do
             if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
               echo "::error::A quality gate failed. See the Summary table."
               exit 1

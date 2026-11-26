@@ -12,7 +12,7 @@ Requirements live in `requirements/`. Risks live in `risks.yml`, each linked to 
 2. **Write the tests first**, from the requirement, and watch them go **red**. Before writing or reviewing any test, read `.claude/skills/writing-tests/SKILL.md`.
 3. **Implement** until the tests go green.
 4. **Run the local gates**: `npm run gates` runs everything CI runs, including mutation testing on the code you changed (committed or not). The README's Commands table explains each step.
-5. **Open a pull request** using `.github/pull_request_template.md`.
+5. **Open a pull request** using `.github/pull_request_template.md`. Under "How to test locally", give the exact steps that show this change working, and run them first. A check fails the PR without them.
 
 Done means: every gate is green locally, and every risk your change touches has a test whose `describe` names its risk ID and requirement ID.
 
@@ -26,9 +26,9 @@ Done means: every gate is green locally, and every risk your change touches has 
 
 ## Guardrails
 
-- A failing test is information. Fix the code, or stop and ask the human. Removing or weakening a test needs a human, named in the PR description.
+- A failing test is information. Fix the code, or stop and ask the human. Removing or weakening a test needs a human, named in the PR description with a line `Test removed: <what and why>, approved by <name>`. `npm run check:tests` fails a PR with fewer tests or assertions, or more skipped ones, without that line.
 - The quality configuration belongs to the QA Guild: `risks.yml` tiers, `quality.yml`, `.github/`, `CODEOWNERS` and this file. Change it only when the task is about it, and say so in the PR.
-- Prefer the dependencies already in `package.json`. List every new dependency in the PR with why it is needed.
+- Prefer the dependencies already in `package.json`. Name every new one in the PR description, one line each: `New dependency: <name>: <why it is needed>`. `npm run check:deps` fails a new package without that line, and one that doesn't exist on npm.
 
 ## Pull requests
 

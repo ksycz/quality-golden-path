@@ -1,0 +1,55 @@
+# Publishes the dashboard to GitHub Pages: https://ksycz.github.io/quality-golden-path/
+# Runs after a merge to main that touches the dashboard, or by hand from the Actions tab.
+# Main only accepts merges that passed "gate · can this PR merge?", so what gets published already passed every gate.
+name: Dashboard on GitHub Pages
+run-name: Publish the dashboard
+
+on:
+  push:
+    branches: [main]
+    paths: ['dashboard/**', 'src/dashboard-metrics.ts', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+# Read-only by default; only the deploy job may write to Pages.
+permissions:
+  contents: read
+
+# One publish at a time; a newer merge replaces a publish still waiting to start.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: "Build · site/index.html from dashboard/data.json"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version-file: .nvmrc, cache: npm }
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts
+      - name: Build the dashboard
+        run: npm run dashboard
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with: { path: site }
+
+  deploy:
+    name: "Publish · ksycz.github.io/quality-golden-path"
+    needs: build
+    runs-on: ubuntu-latest
+    # The only job that can write: Pages, plus the short-lived token Pages uses to check where the deploy comes from.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
