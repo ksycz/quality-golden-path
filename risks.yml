@@ -15,3 +15,6 @@ risks:
   - id: RISK-TL-REMAINING
     description: The customer is shown a wrong or negative remaining limit.
     requirement: REQ-TL-4
+  - id: RISK-TL-SINGLE-MAX
+    description: A single transfer of exactly the maximum is wrongly rejected, or one above it is wrongly allowed.
+    requirement: REQ-TL-6

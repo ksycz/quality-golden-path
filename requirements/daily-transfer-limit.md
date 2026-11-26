@@ -16,6 +16,7 @@ All amounts are whole **cents** (integers). There are no fractions of a cent.
 | **REQ-TL-3** | The amount must be a positive whole number of cents. Anything else (zero, negative, fractional, not a number) is rejected with reason `INVALID_AMOUNT`. |
 | **REQ-TL-4** | Every decision tells the customer how much of today's limit is left: after the transfer if approved, unchanged if rejected. It is never negative. |
 | **REQ-TL-5** | The default daily limit is **5,000.00 EUR** (500,000 cents). A customer can have a different limit; a limit is a whole number of cents, zero or more. |
+| **REQ-TL-6** | A single transfer may be at most **2,000.00 EUR** (200,000 cents). Exactly 2,000.00 is allowed; anything above is rejected with reason `SINGLE_TRANSFER_LIMIT`. |
 
 ## Examples
 
@@ -27,6 +28,13 @@ All amounts are whole **cents** (integers). There are no fractions of a cent.
 | 4,999.99 | 0.02 | 5,000.00 | rejected `LIMIT_EXCEEDED` | 0.01 |
 | 1,000.00 | 0.00 | 5,000.00 | rejected `INVALID_AMOUNT` | 4,000.00 |
 
+Single transfer maximum (REQ-TL-6):
+
+| Amount | Decision |
+|---|---|
+| 2,000.00 | allowed |
+| 2,000.01 | rejected `SINGLE_TRANSFER_LIMIT` |
+
 ## Out of scope
 
-Currency conversion, time zones and when "today" starts, per-transfer limits. The caller passes in the total already sent today.
+Currency conversion, time zones and when "today" starts. The caller passes in the total already sent today.
